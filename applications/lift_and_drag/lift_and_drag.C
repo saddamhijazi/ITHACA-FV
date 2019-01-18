@@ -88,8 +88,8 @@ int main(int argc, char *argv[])
             mesh,
             IOobject::MUST_READ,
             IOobject::NO_WRITE
-        )
-    );
+            )
+        );
 
     IOdictionary transportProperties
     (
@@ -100,8 +100,8 @@ int main(int argc, char *argv[])
             mesh,
             IOobject::MUST_READ,
             IOobject::NO_WRITE
-        )
-    );
+            )
+        );
 
     word pName = FORCESdict.lookup("pName");
     word UName = FORCESdict.lookup("UName");
@@ -119,16 +119,19 @@ int main(int argc, char *argv[])
     forcesDict.add("Aref", FORCESdict.lookup("Aref"));
     forcesDict.add("rhoInf", FORCESdict.lookup("rhoInf"));
     forcesDict.add("rho", FORCESdict.lookup("rho"));
-
+    Info << "1" << endl;
     functionObjects::forceCoeffs fc("FC", runTime, forcesDict);
+    Info << "1" << endl;
     functionObjects::forces f("Forces", mesh, forcesDict);
+    Info << "2" << endl;
 
     for (label i = 2; i < Times.size(); i++)
     {
+
         runTime.setTime(Times[i], i);
         mesh.readUpdate();
 
-        volVectorField U
+        volVectorField U_aux
         (
             IOobject
             (
@@ -136,11 +139,15 @@ int main(int argc, char *argv[])
                 runTime.timeName(),
                 mesh,
                 IOobject::MUST_READ
-            ),
+                ),
             mesh
-        );
+            );
+        
+        word U_name('U');
+        volVectorField U(U_name,U_aux);
+        
 
-        volScalarField P
+        volScalarField P_aux
         (
             IOobject
             (
@@ -148,13 +155,17 @@ int main(int argc, char *argv[])
                 runTime.timeName(),
                 mesh,
                 IOobject::MUST_READ
-            ),
+                ),
             mesh
-        );
+            );
+        word P_name('p');
+        volScalarField P(P_name,P_aux);
+
 
         fc.execute();
         fc.write();
         f.write();
+
     }
     Info << endl;
     Info << "End\n" << endl;

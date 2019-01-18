@@ -20,6 +20,7 @@ EXE_INC = \
     -I../ITHACA_FOMPROBLEMS/reductionProblem \
     -I../ITHACA_FOMPROBLEMS/laplacianProblem \
     -I../ITHACA_FOMPROBLEMS/steadyNS \
+    -I../ITHACA_FOMPROBLEMS/steadyNSsplit \
     -I../ITHACA_FOMPROBLEMS/steadyNSturb \
     -I../ITHACA_FOMPROBLEMS/unsteadyNS \
     -I../ITHACA_FOMPROBLEMS/unsteadyNSturb \

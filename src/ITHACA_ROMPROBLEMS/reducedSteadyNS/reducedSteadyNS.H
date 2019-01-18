@@ -50,25 +50,26 @@ SourceFiles
 /// Structure to implement a newton object for a stationary NS problem
 struct newton_steadyNS: public newton_argument<double>
 {
-    public:
-        newton_steadyNS() {}
-        newton_steadyNS(int Nx, int Ny, steadyNS& problem): newton_argument<double>(Nx,
-                    Ny),
-            problem(&problem),
-            Nphi_u(problem.NUmodes + problem.liftfield.size() + problem.NSUPmodes),
-            Nphi_p(problem.NPmodes),
-            N_BC(problem.inletIndex.rows())
-        {}
+public:
+    newton_steadyNS() {}
+    newton_steadyNS(int Nx, int Ny, steadyNS& problem): newton_argument<double>(Nx,
+        Ny),
+    problem(&problem),
+    Nphi_u(problem.NUmodes + problem.liftfield.size() + problem.NSUPmodes),
+    Nphi_p(problem.NPmodes),
+    N_BC(problem.inletIndex.rows())
+    {}
 
-        int operator()(const Eigen::VectorXd& x, Eigen::VectorXd& fvec) const;
-        int df(const Eigen::VectorXd& x,  Eigen::MatrixXd& fjac) const;
+    int operator()(const Eigen::VectorXd& x, Eigen::VectorXd& fvec) const;
+    int df(const Eigen::VectorXd& x,  Eigen::MatrixXd& fjac) const;
 
-        steadyNS* problem;
-        int Nphi_u;
-        int Nphi_p;
-        int N_BC;
-        scalar nu;
-        Eigen::VectorXd BC;
+    steadyNS* problem;
+    int Nphi_u;
+    int Nphi_p;
+    int N_BC;
+    scalar nu;
+    Eigen::MatrixXd tauU;
+    Eigen::VectorXd BC;
 };
 
 
@@ -81,78 +82,81 @@ struct newton_steadyNS: public newton_argument<double>
 equations. This class must be used together with the steadyNS class */
 class reducedSteadyNS: public reducedProblem
 {
-    private:
+private:
 
-    public:
+public:
         // Constructors
         /// Construct Null
-        reducedSteadyNS();
+    reducedSteadyNS();
 
         /// Construct Null
         ///
         /// @param[in]  problem  a full order steadyNS problem
         /// @param[in]  tipo     Type of pressure stabilisation method you want to use "SUP" for supremizer, "PPE" for pressure Poisson equation.
         ///
-        explicit reducedSteadyNS(steadyNS& problem);
+    explicit reducedSteadyNS(steadyNS& problem);
 
-        ~reducedSteadyNS() {};
+    ~reducedSteadyNS() {};
 
         /// Reduced matrix for tangent forces
-        Eigen::MatrixXd f_tau;
+    Eigen::MatrixXd f_tau;
 
         /// Reduced matrix for normal forces
-        Eigen::MatrixXd f_n;
+    Eigen::MatrixXd f_n;
 
         /// Vector to store the previous solution during the Newton procedure
-        Eigen::VectorXd y_old;
+    Eigen::VectorXd y_old;
 
         /// Vector to store the solution during the Newton procedure
-        Eigen::VectorXd y;
+    Eigen::VectorXd y;
 
         /// Reduced viscosity in case of parametrized viscosity
-        scalar nu;
+    scalar nu;
 
         /// List of Eigen matrices to store the online solution
-        List < Eigen::MatrixXd> online_solution;
+    List < Eigen::MatrixXd> online_solution;
 
         /// List of pointers to store the modes for velocity
-        PtrList<volVectorField> Umodes;
+    PtrList<volVectorField> Umodes;
 
         /// List of pointers to store the modes for pressure
-        PtrList<volScalarField> Pmodes;
+    PtrList<volScalarField> Pmodes;
 
         /// List of pointers to store the snapshots for velocity
-        PtrList<volVectorField> Usnapshots;
+    PtrList<volVectorField> Usnapshots;
 
         /// List of pointers to store the snapshots for pressure
-        PtrList<volScalarField> Psnapshots;
+    PtrList<volScalarField> Psnapshots;
 
         /// Reconstructed pressure field
-        PtrList<volScalarField> PREC;
+    PtrList<volScalarField> PREC;
 
         /// Recontructed velocity field
-        PtrList<volVectorField> UREC;
+    PtrList<volVectorField> UREC;
 
         /// Newton object used to solve the non linear problem
-        newton_steadyNS newton_object;
+    newton_steadyNS newton_object;
 
         /// Pointer to the FOM problem
-        steadyNS* problem;
+    steadyNS* problem;
 
         /// Number of velocity modes
-        int Nphi_u;
+    int Nphi_u;
 
         /// Number of pressure modes
-        int Nphi_p;
+    int Nphi_p;
 
         /// Number of supremizer modes
-        int Nphi_sup;
+    int Nphi_sup;
 
         /// Number of parametrized boundary conditions
-        int N_BC;
+    int N_BC;
 
         /// Counter to count the online solutions
-        int count_online_solve = 1;
+    int count_online_solve = 1;
+
+        /// Penalty Factor
+    Eigen::MatrixXd tauU;
 
         // Functions
 
@@ -162,7 +166,7 @@ class reducedSteadyNS: public reducedProblem
         /// with an Eigen::MatrixXd and must have one col and as many rows as the number
         /// of parametrized boundary conditions.
         ///
-        void solveOnline_PPE(Eigen::MatrixXd vel_now);
+    void solveOnline_PPE(Eigen::MatrixXd vel_now);
 
         /// Method to perform an online solve using a supremizer stabilisation
         /// method
@@ -171,7 +175,7 @@ class reducedSteadyNS: public reducedProblem
         /// with an Eigen::MatrixXd and must have one col and as many rows as the number
         /// of parametrized boundary conditions.
         ///
-        void solveOnline_sup(Eigen::MatrixXd vel_now);
+    void solveOnline_sup(Eigen::MatrixXd vel_now);
 
         /// Method to reconstruct a solution from an online solve with a PPE stabilisation technique.
         /// stabilisation method
@@ -179,8 +183,8 @@ class reducedSteadyNS: public reducedProblem
         /// @param[in]  folder      The folder where to output the solutions
         /// @param[in]  printevery  The printevery
         ///
-        void reconstruct_PPE(fileName folder = "./ITHACAOutput/online_rec",
-                             int printevery = 1);
+    void reconstruct_PPE(fileName folder = "./ITHACAOutput/online_rec",
+     int printevery = 1);
 
         /// Method to reconstruct the solutions from an online solve with a supremizer stabilisation technique.
         /// stabilisation method
@@ -188,20 +192,29 @@ class reducedSteadyNS: public reducedProblem
         /// @param[in]  folder      The folder where to output the solutions
         /// @param[in]  printevery  The printevery
         ///
-        void reconstruct_sup(fileName folder = "./ITHACAOutput/online_rec",
-                             int printevery = 1);
+    void reconstruct_sup(fileName folder = "./ITHACAOutput/online_rec",
+     int printevery = 1);
+
+    ///
+    /// @brief      { function_description }
+    ///
+    /// @param[in]  PLiftfield  The p liftfield
+    /// @param[in]  folder      The folder
+    /// @param[in]  printevery  The printevery
+    ///
+    void reconstruct_sup_pLift(volScalarField PLiftfield,fileName folder, int printevery=1);
 
         /// Method to compute the reduced order forces
         ///
         /// @param      problem  a steadyNS full order problem.
         /// @param[in]  folder   The folder where to output the forces matrices
         ///
-        void reconstruct_LiftandDrag(steadyNS& problem, fileName folder);
+    void reconstruct_LiftandDrag(steadyNS& problem, fileName folder);
 
         /// Method to evaluate the online inf-sup constant
         ///
         /// @return     return the reduced version of the inf-sup constant.
-        double inf_sup_constant();
+    double inf_sup_constant();
 };
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //

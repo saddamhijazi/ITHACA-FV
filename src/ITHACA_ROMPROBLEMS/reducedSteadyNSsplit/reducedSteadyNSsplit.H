@@ -1,0 +1,168 @@
+/*---------------------------------------------------------------------------*\
+     ██╗████████╗██╗  ██╗ █████╗  ██████╗ █████╗       ███████╗██╗   ██╗
+     ██║╚══██╔══╝██║  ██║██╔══██╗██╔════╝██╔══██╗      ██╔════╝██║   ██║
+     ██║   ██║   ███████║███████║██║     ███████║█████╗█████╗  ██║   ██║
+     ██║   ██║   ██╔══██║██╔══██║██║     ██╔══██║╚════╝██╔══╝  ╚██╗ ██╔╝
+     ██║   ██║   ██║  ██║██║  ██║╚██████╗██║  ██║      ██║      ╚████╔╝
+     ╚═╝   ╚═╝   ╚═╝  ╚═╝╚═╝  ╚═╝ ╚═════╝╚═╝  ╚═╝      ╚═╝       ╚═══╝
+
+ * In real Time Highly Advanced Computational Applications for Finite Volumes
+ * Copyright (C) 2017 by the ITHACA-FV authors
+-------------------------------------------------------------------------------
+License
+    This file is part of ITHACA-FV
+    ITHACA-FV is free software: you can redistribute it and/or modify
+    it under the terms of the GNU Lesser General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+    ITHACA-FV is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+    GNU Lesser General Public License for more details.
+    You should have received a copy of the GNU Lesser General Public License
+    along with ITHACA-FV. If not, see <http://www.gnu.org/licenses/>.
+Class
+    reducedSteadyNSsplit
+Description
+    A reduced problem for the stationary turbulent NS equations
+SourceFiles
+    reducedSteadyNSsplit.C
+\*---------------------------------------------------------------------------*/
+
+/// \file
+/// Header file of the reducedSteadyNSsplit class.
+/// \dir
+/// Directory containing the header and source files for the reducedSteadyNSsplit class
+
+#ifndef reducedSteadyNSsplit_H
+#define reducedSteadyNSsplit_H
+
+#include "fvCFD.H"
+#include "IOmanip.H"
+#include "reducedProblem.H"
+#include "reducedSteadyNS.H"
+#include "steadyNSsplit.H"
+#include "ITHACAutilities.H"
+#include <Eigen/Dense>
+#include <unsupported/Eigen/NonLinearOptimization>
+#include <unsupported/Eigen/NumericalDiff>
+
+/// Structure to implement a newton object for a stationary NS problem
+struct newton_steadyNSsplit: public newton_argument<double>
+{
+public:
+    newton_steadyNSsplit() {}
+    newton_steadyNSsplit(int Nx, int Ny,
+        steadyNSsplit& problem): newton_argument<double>(Nx, Ny),
+    problem(&problem),
+    Nphi_u(problem.NUmodesx + problem.NUmodesy + problem.NUmodesz + problem.NSUPmodes + problem.NSUPmodesx
+     + problem.NSUPmodesy + problem.NSUPmodesz),
+    Nphi_nut(problem.Nnutmodes),
+    Nphi_p(problem.NPmodes),
+    N_BC(problem.inletIndex.rows()),
+    nu_c(problem.Nnutmodes)
+    {}
+
+    int operator()(const Eigen::VectorXd& x, Eigen::VectorXd& fvec) const;
+    int df(const Eigen::VectorXd& x,  Eigen::MatrixXd& fjac) const;
+
+    steadyNSsplit* problem;
+    int Nphi_u;
+    int Nphi_nut;
+    int Nphi_p;
+    int N_BC;
+    Eigen::VectorXd nu_c;
+    scalar nu;
+    Eigen::MatrixXd tauU;
+    Eigen::VectorXd BC;
+    std::vector<SPLINTER::RBFSpline*> SPLINES;
+};
+
+
+/*---------------------------------------------------------------------------*\
+                        Class reducedProblem Declaration
+\*---------------------------------------------------------------------------*/
+
+
+/// Class where it is implemented a reduced problem for the <b> steady turbulent Navier-stokes </b> problem.
+/** In this class are implemented the methods to solve a reduced version of the stationary turbulent Navier-stokes
+equations. This class must be used together with the steadyNS class */
+class reducedSteadyNSsplit: public reducedSteadyNS
+{
+private:
+
+public:
+        // Constructors
+        /// Construct Null
+    reducedSteadyNSsplit();
+        /// Construct Null
+        ///
+        /// @param      problem  a full order steadyNSsplit problem
+        ///
+    reducedSteadyNSsplit(steadyNSsplit& problem);
+
+    ~reducedSteadyNSsplit() {};
+
+
+    /// List of snapshots for the solution for eddy viscosity
+    PtrList<volScalarField> nutFields;
+
+    /// List of POD modes for eddy viscosity
+    PtrList<volScalarField> nuTmodes;
+
+    /// Reconstructed eddy viscosity field
+    PtrList<volScalarField> nutREC;
+
+    /// Vector of eddy viscosity RBF interoplated coefficients
+    Eigen::VectorXd Ncoeff_DDROM;
+
+        /// Number of viscosity modes
+    int Nphi_nut;
+
+        /// Newton Object to solve the nonlinear problem
+    newton_steadyNSsplit newton_object;
+
+        /// Pointer to the FOM problem
+    steadyNSsplit* problem;
+
+        ///
+        /// Method to perform an online solve using a supremizer stabilisation method
+        ///
+        /// @param[in]  vel_now   The vector of online velocity. It is defined in
+        /// with an Eigen::MatrixXd and must have one col and as many rows as the number
+        /// of parametrized boundary conditions.
+        /// @param[in]  startSnap The first snapshot taken from the offline snahpshots
+        /// and used to get the reduced initial condition.
+        ///
+    void solveOnline_sup(Eigen::MatrixXd vel_now);
+
+        /// Method to reconstruct the solutions from an online solve with a supremizer stabilisation technique.
+        /// stabilisation method
+        ///
+        /// @param[in]  folder      The folder where to output the solutions
+        /// @param[in]  printevery  The printevery
+        ///
+    void reconstruct_sup(fileName folder = "./ITHACAOutput/online_rec",
+     int printevery = 1);
+
+    ///
+    /// @brief      { function_description }
+    ///
+    /// @param[in]  PLiftfield  The p liftfield
+    /// @param[in]  folder      The folder
+    /// @param[in]  printevery  The printevery
+    ///
+    void reconstruct_sup_pLift(volScalarField PLiftfield,fileName folder, int printevery=1);
+};
+
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+
+
+#endif
+
+
+
+
+
+

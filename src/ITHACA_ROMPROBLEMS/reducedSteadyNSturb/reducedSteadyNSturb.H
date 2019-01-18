@@ -50,30 +50,31 @@ SourceFiles
 /// Structure to implement a newton object for a stationary NS problem
 struct newton_steadyNSturb: public newton_argument<double>
 {
-    public:
-        newton_steadyNSturb() {}
-        newton_steadyNSturb(int Nx, int Ny,
-                            steadyNSturb& problem): newton_argument<double>(Nx, Ny),
-            problem(&problem),
-            Nphi_u(problem.NUmodes + problem.liftfield.size() + problem.NSUPmodes),
-            Nphi_nut(problem.Nnutmodes),
-            Nphi_p(problem.NPmodes),
-            N_BC(problem.inletIndex.rows()),
-            nu_c(problem.Nnutmodes)
-        {}
+public:
+    newton_steadyNSturb() {}
+    newton_steadyNSturb(int Nx, int Ny,
+        steadyNSturb& problem): newton_argument<double>(Nx, Ny),
+    problem(&problem),
+    Nphi_u(problem.NUmodes + problem.liftfield.size() + problem.NSUPmodes),
+    Nphi_nut(problem.Nnutmodes),
+    Nphi_p(problem.NPmodes),
+    N_BC(problem.inletIndex.rows()),
+    nu_c(problem.Nnutmodes)
+    {}
 
-        int operator()(const Eigen::VectorXd& x, Eigen::VectorXd& fvec) const;
-        int df(const Eigen::VectorXd& x,  Eigen::MatrixXd& fjac) const;
+    int operator()(const Eigen::VectorXd& x, Eigen::VectorXd& fvec) const;
+    int df(const Eigen::VectorXd& x,  Eigen::MatrixXd& fjac) const;
 
-        steadyNSturb* problem;
-        int Nphi_u;
-        int Nphi_nut;
-        int Nphi_p;
-        int N_BC;
-        Eigen::VectorXd nu_c;
-        scalar nu;
-        Eigen::VectorXd BC;
-        std::vector<SPLINTER::RBFSpline*> SPLINES;
+    steadyNSturb* problem;
+    int Nphi_u;
+    int Nphi_nut;
+    int Nphi_p;
+    int N_BC;
+    Eigen::VectorXd nu_c;
+    scalar nu;
+    Eigen::MatrixXd tauU;
+    Eigen::VectorXd BC;
+    std::vector<SPLINTER::RBFSpline*> SPLINES;
 };
 
 
@@ -87,38 +88,48 @@ struct newton_steadyNSturb: public newton_argument<double>
 equations. This class must be used together with the steadyNS class */
 class reducedSteadyNSturb: public reducedSteadyNS
 {
-    private:
+private:
 
-    public:
+public:
         // Constructors
         /// Construct Null
-        reducedSteadyNSturb();
+    reducedSteadyNSturb();
         /// Construct Null
         ///
         /// @param      problem  a full order steadyNSturb problem
         ///
-        reducedSteadyNSturb(steadyNSturb& problem);
+    reducedSteadyNSturb(steadyNSturb& problem);
 
-        ~reducedSteadyNSturb() {};
+    ~reducedSteadyNSturb() {};
 
 
-        /// List of snapshots for the solution for eddy viscosity
-        PtrList<volScalarField> nutFields;
+    /// List of snapshots for the solution for eddy viscosity
+    PtrList<volScalarField> nutFields;
 
-        /// List of POD modes for eddy viscosity
-        PtrList<volScalarField> nuTmodes;
+    /// List of POD modes for eddy viscosity
+    PtrList<volScalarField> nuTmodes;
 
-        /// Reconstructed eddy viscosity field
-        PtrList<volScalarField> nutREC;
+    /// Reconstructed eddy viscosity field
+    PtrList<volScalarField> nutREC;
+
+    /// Vector of eddy viscosity RBF interoplated coefficients
+    Eigen::VectorXd Ncoeff_DDROM;
 
         /// Number of viscosity modes
-        int Nphi_nut;
+    int Nphi_nut;
 
         /// Newton Object to solve the nonlinear problem
-        newton_steadyNSturb newton_object;
+    newton_steadyNSturb newton_object;
 
         /// Pointer to the FOM problem
-        steadyNSturb* problem;
+    steadyNSturb* problem;
+
+    
+
+
+    void fixed_point_matrix_and_vector(Eigen::VectorXd& x, Eigen::VectorXd& BC, Eigen::VectorXd& nu_rbf, 
+        Eigen::VectorXd& b, Eigen::MatrixXd& Aa);
+
 
         ///
         /// Method to perform an online solve using a supremizer stabilisation method
@@ -129,7 +140,7 @@ class reducedSteadyNSturb: public reducedSteadyNS
         /// @param[in]  startSnap The first snapshot taken from the offline snahpshots
         /// and used to get the reduced initial condition.
         ///
-        void solveOnline_sup(Eigen::MatrixXd vel_now);
+    void solveOnline_sup(Eigen::MatrixXd vel_now);
 
         /// Method to reconstruct the solutions from an online solve with a supremizer stabilisation technique.
         /// stabilisation method
@@ -137,10 +148,17 @@ class reducedSteadyNSturb: public reducedSteadyNS
         /// @param[in]  folder      The folder where to output the solutions
         /// @param[in]  printevery  The printevery
         ///
-        void reconstruct_sup(fileName folder = "./ITHACAOutput/online_rec",
-                             int printevery = 1);
+    void reconstruct_sup(fileName folder = "./ITHACAOutput/online_rec",
+     int printevery = 1);
 
-
+    ///
+    /// @brief      { function_description }
+    ///
+    /// @param[in]  PLiftfield  The p liftfield
+    /// @param[in]  folder      The folder
+    /// @param[in]  printevery  The printevery
+    ///
+    void reconstruct_sup_pLift(volScalarField PLiftfield,fileName folder, int printevery=1);
 };
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //

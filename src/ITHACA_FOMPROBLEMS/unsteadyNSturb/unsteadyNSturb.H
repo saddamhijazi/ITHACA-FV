@@ -66,27 +66,27 @@ and the for the generation of the reduced matrices for subsequent online solve, 
 of the steadyNS class */
 class unsteadyNSturb: public unsteadyNS
 {
-    public:
+public:
         // Constructors
         /// Construct Null
-        unsteadyNSturb();
+    unsteadyNSturb();
 
         /// Construct with argc and argv
-        unsteadyNSturb(int argc, char* argv[]);
+    unsteadyNSturb(int argc, char* argv[]);
 
         // Specific variable for the unstationary case
         // Member Functions
         /// List of snapshots for the solution for eddy viscosity
-        PtrList<volScalarField> nutFields;
+    PtrList<volScalarField> nutFields;
 
         /// List of POD modes for eddy viscosity
-        PtrList<volScalarField> nuTmodes;
+    PtrList<volScalarField> nuTmodes;
 
         // Create a Rbf splines for interpolation
-        std::vector<SPLINTER::DataTable*> SAMPLES;
+    std::vector<SPLINTER::DataTable*> SAMPLES;
 
         // Create a SAMPLES for interpolation
-        std::vector<SPLINTER::RBFSpline*> rbfsplines;
+    std::vector<SPLINTER::RBFSpline*> rbfsplines;
 
         /** @name Reduced Matrices
         *
@@ -94,28 +94,34 @@ class unsteadyNSturb: public unsteadyNS
         ///@{
         //
         /// Turbulent viscosity term
-        Eigen::MatrixXd BT_matrix;
+    Eigen::MatrixXd BT_matrix;
 
         /// Turbulent viscosity term
-        List <Eigen::MatrixXd> CT2_matrix;
+    List <Eigen::MatrixXd> CT2_matrix;
 
         /// Turbulent viscosity term
-        List <Eigen::MatrixXd> CT1_matrix;
+    List <Eigen::MatrixXd> CT1_matrix;
 
         /// Total C Matrix
-        List <Eigen::MatrixXd> C_total_matrix;
+    List <Eigen::MatrixXd> C_total_matrix;
 
         /// Total B Matrix
-        Eigen::MatrixXd B_total_matrix;
+    Eigen::MatrixXd B_total_matrix;
         ///@}
         //
 
+        /// The matrix of L2 projection coefficients for the eddy viscosity
+    Eigen::MatrixXd Ncoeff;
+
+    /// The vector of L2 projection coefficients for the eddy viscosity snapshot
+    Eigen::VectorXd nutCoeff;
+
         /// Number of viscoisty modes used for the projection
-        label Nnutmodes;
+    label Nnutmodes;
 
 
         /// Eddy viscosity field
-        autoPtr<volScalarField> _nut;
+    autoPtr<volScalarField> _nut;
 
 
 
@@ -129,7 +135,7 @@ class unsteadyNSturb: public unsteadyNS
         ///
         /// @return     BT matrix for turbulence treatment
         ///
-        Eigen::MatrixXd BT_turbulence(label NUmodes, label NSUPmodes);
+    Eigen::MatrixXd BT_turbulence(label NUmodes, label NSUPmodes);
 
 
         ///
@@ -141,8 +147,8 @@ class unsteadyNSturb: public unsteadyNS
         ///
         /// @return     CT1 matrix for turbulence treatment
         ///
-        List < Eigen::MatrixXd > turbulence_term1(label NUmodes, label NSUPmodes,
-                label Nnutmodes);
+    List < Eigen::MatrixXd > turbulence_term1(label NUmodes, label NSUPmodes,
+        label Nnutmodes);
 
         ///
         /// @brief      CT2 added matrix for the turbulence treatement
@@ -153,8 +159,8 @@ class unsteadyNSturb: public unsteadyNS
         ///
         /// @return     CT2 matrix for turbulence treatment
         ///
-        List < Eigen::MatrixXd > turbulence_term2(label NUmodes, label NSUPmodes,
-                label Nnutmodes);
+    List < Eigen::MatrixXd > turbulence_term2(label NUmodes, label NSUPmodes,
+        label Nnutmodes);
 
         //--------------------------------------------------------------------------
         /// @brief      Perform a truthsolve
@@ -162,7 +168,7 @@ class unsteadyNSturb: public unsteadyNS
         /// to construct mu_interp matrix which is written out in the Offline folder, also for par file in
         /// the Parameters folder.
         ///
-        void truthSolve(List<scalar> mu_now);
+    void truthSolve(List<scalar> mu_now);
 
 
         ///
@@ -174,8 +180,8 @@ class unsteadyNSturb: public unsteadyNS
         /// @param[in]  NSUPmodes  The nsu pmodes
         /// @param[in]  Nnutmodes  The nnutmodes
         ///
-        void projectSUP(fileName folder, label NUmodes, label NPmodes, label NSUPmodes,
-                        label Nnutmodes);
+    void projectSUP(fileName folder, label NUmodes, label NPmodes, label NSUPmodes,
+        label Nnutmodes);
 
         ///
         /// Project using the Poisson Equation for pressure
@@ -186,8 +192,8 @@ class unsteadyNSturb: public unsteadyNS
         /// @param[in]  NSUPmodes  The nsu pmodes
         /// @param[in]  Nnutmodes  The nnutmodes
         ///
-        void projectPPE(fileName folder, label NUmodes, label NPmodes, label NSUPmodes,
-                        label Nnutmodes);
+    void projectPPE(fileName folder, label NUmodes, label NPmodes, label NSUPmodes,
+        label Nnutmodes);
 
 };
 

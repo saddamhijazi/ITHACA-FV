@@ -100,6 +100,9 @@ class steadyNS: public reductionProblem
         /// List of pointers used to form the homogeneous velocity snapshots
         PtrList<volVectorField> Uomfield;
 
+        /// List of pointers used to form the homogeneous pressure snapshots
+        PtrList<volScalarField> Pomfield;
+
         /// Tolerance for the residual of the stationary problems, there is the same tolerance for velocity and pressure
         scalar tolerance;
 
@@ -159,6 +162,14 @@ class steadyNS: public reductionProblem
         /// Pressure forces
         Eigen::MatrixXd n_matrix;
 
+        /// Boundary term for penalty method - vector
+        List <Eigen::MatrixXd> BC_vel_vector;
+
+        /// Boundary term for penalty method - matrix
+        List <Eigen::MatrixXd> BC_vel_matrix;
+
+        ///
+        // Eigen::VectorXd patches_penalty;
 
         // Other Variables
         /// Boolean variable to check the existence of the supremizer modes
@@ -206,6 +217,9 @@ class steadyNS: public reductionProblem
 
         /// continuity error
         scalar cumulativeContErr = 0;
+
+        /// Boundary Method
+        word BCmethod;
 
         // Functions
 
@@ -358,6 +372,27 @@ class steadyNS: public reductionProblem
         /// @return     reduced third order tensor in List <Eigen::MatrixXd> format for the BC3 using a PPE approach.
         ///
         Eigen::MatrixXd pressure_BC3(label NPmodes, label NUmodes);
+
+
+        //--------------------------------------------------------------------------
+        /// @brief      Boundary integral modes on boundary used by the penaly method
+        ///
+        /// @param[in]  NUmodes  The n umodes
+        /// @param[in]  NSUPmodes  The n supmodes
+        ///
+        /// @return     reduced third order tensor in List <Eigen::MatrixXd> format for the penalty method.
+        ///
+        List< Eigen::MatrixXd > BC_velocity_vec(label NUmodes, label NSUPmodes);
+
+        //--------------------------------------------------------------------------
+        /// @brief      Boundary integral modes on boundary used by the penaly method
+        ///
+        /// @param[in]  NUmodes  The n umodes
+        /// @param[in]  NSUPmodes  The n supmodes
+        ///
+        /// @return     reduced third order tensor in List <Eigen::MatrixXd> format for the penalty method.
+        ///
+        List< Eigen::MatrixXd > BC_velocity_mat(label NUmodes, label NSUPmodes);
 
         //--------------------------------------------------------------------------
         /// Function to change the viscosity

@@ -1,5 +1,6 @@
 reductionProblem/reductionProblem.C
 steadyNS/steadyNS.C
+steadyNSsplit/steadyNSsplit.C
 steadyNSturb/steadyNSturb.C
 unsteadyNS/unsteadyNS.C
 unsteadyNSturb/unsteadyNSturb.C

@@ -497,4 +497,41 @@ void reducedUnsteadyNS::reconstruct_sup(fileName folder, int printevery)
         counter++;
     }
 }
+
+void reducedUnsteadyNS::reconstruct_sup_pLift(volScalarField PLiftfield,fileName folder, int printevery)
+{
+    mkDir(folder);
+    ITHACAutilities::createSymLink(folder);
+    int counter = 0;
+    int nextwrite = 0;
+    int counter2 = 1;
+
+    for (label i = 0; i < online_solution.size(); i++)
+    {
+        if (counter == nextwrite)
+        {
+            volVectorField U_rec("U_rec", Umodes[0] * 0);
+
+            for (label j = 0; j < Nphi_u; j++)
+            {
+                U_rec += Umodes[j] * online_solution[i](j + 1, 0);
+            }
+
+            problem->exportSolution(U_rec,  name(counter2), folder);
+            volScalarField P_rec("P_rec", PLiftfield);
+
+            for (label j = 0; j < Nphi_p; j++)
+            {
+                P_rec += Pmodes[j] * online_solution[i](j + Nphi_u + 1, 0);
+            }
+
+            problem->exportSolution(P_rec, name(counter2), folder);
+            nextwrite += printevery;
+            double timenow = online_solution[i](0, 0);
+            std::ofstream of(folder + name(counter2) + "/" + name(timenow));
+            counter2 ++;
+        }
+        counter++;
+    }
+}
 // ************************************************************************* //

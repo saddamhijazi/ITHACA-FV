@@ -162,6 +162,26 @@ class ITHACAutilities
         static bool check_sup();
 
         //--------------------------------------------------------------------------
+        /// Function to compute the relative error between two volVectorFields in LInf norm
+        ///
+        /// @param[in]  field1  The field 1
+        /// @param[in]  field2  The field 2
+        ///
+        /// @return     LInf norm of the relative error.
+        ///
+        static double error_fields_lInf(volVectorField& field1, volVectorField& field2);
+
+        //--------------------------------------------------------------------------
+        /// Function to compute the relative error between two volScalarFields in LInf norm
+        ///
+        /// @param[in]  field1  The field 1
+        /// @param[in]  field2  The field 2
+        ///
+        /// @return     LInf norm of the relative error.
+        ///
+        static double error_fields_lInf(volScalarField& field1, volScalarField& field2);
+
+        //--------------------------------------------------------------------------
         /// Function to compute the relative error between two volVectorFields in L2 norm
         ///
         /// @param[in]  field1  The field 1
@@ -181,6 +201,35 @@ class ITHACAutilities
         ///
         static double error_fields(volScalarField& field1, volScalarField& field2);
 
+        //--------------------------------------------------------------------------
+        /// Function to compute the relative error in LInf norm between two lists of volVectorFields
+        ///
+        /// @param[in]  fields1  The fields 1
+        /// @param[in]  fields2  The fields 2
+        ///
+        /// @return     A vector containing the error between the two fields in Eigen::MatrixXd form.
+        ///
+        static Eigen::MatrixXd error_listfields_lInf(PtrList<volVectorField>& fields1,
+                                                PtrList<volVectorField>& fields2);
+
+        //--------------------------------------------------------------------------
+        /// Function to compute the relative error in LInf norm between two lists of volScalarFields
+        ///
+        /// @param[in]  fields1  The fields 1
+        /// @param[in]  fields2  The fields 2
+        ///
+        /// @return     A vector containing the error between the two fields in Eigen::MatrixXd form.
+        ///
+        static Eigen::MatrixXd error_listfields_lInf(PtrList<volScalarField>& fields1,
+                                                PtrList<volScalarField>& fields2);
+
+        //--------------------------------------------------------------------------
+        /// Function to compute a Mass Matrix from a list of Basis Functions (vectorial) for L2 projection
+        ///
+        /// @param[in]  modes  The modes in PtrList form
+        ///
+        /// @return     The mass matrix in Eigen::MatrixXd form.
+        ///
         //--------------------------------------------------------------------------
         /// Function to compute the relative error in L2 norm between two lists of volVectorFields
         ///
@@ -358,6 +407,23 @@ class ITHACAutilities
         static void assignBC(volScalarField& s, label BC_ind, Eigen::MatrixXd valueVec);
 
 
+        //--------------------------------------------------------------------------
+        /// Evaluate the LInf norm of a volScalarField
+        ///
+        /// @param[in]  field  The field.
+        ///
+        /// @return     LInf norm of the volScalarField.
+        ///
+        static double LInfnorm(volScalarField field);
+
+        //--------------------------------------------------------------------------
+        /// Evaluate the LInf norm of a volVectorField
+        ///
+        /// @param[in]  field  The field.
+        ///
+        /// @return     LInf norm of the volVectorField.
+        ///
+        static double LInfnorm(volVectorField field);
 
         //--------------------------------------------------------------------------
         /// Evaluate the L2 norm of a volScalarField
