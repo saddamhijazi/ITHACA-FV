@@ -215,3 +215,9 @@ class DEIM
 
 };
 
+
+// template<>
+// DEIM<fvScalarMatrix>::DEIM (PtrList<fvScalarMatrix>& s, int MaxModesA, int MaxModesB, word MatrixName);
+
+// template<>
+// DEIM<fvVectorMatrix>::DEIM (PtrList<fvVectorMatrix>& s, int MaxModesA, int MaxModesB, word MatrixName)

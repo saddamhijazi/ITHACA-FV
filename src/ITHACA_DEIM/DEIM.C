@@ -57,7 +57,7 @@ DEIM<T>::DEIM (PtrList<T>& s, int MaxModes, word FunctionName)
     {
         A = P.transpose() * U;
         b = P.transpose() * MatrixModes.col(i);
-        c = A.lu().solve(b);
+        c = A.fullPivLu().solve(b);
         r = MatrixModes.col(i) - U * c;
         max = r.cwiseAbs().maxCoeff(&ind_max, &c1);
         P.conservativeResize(MatrixModes.rows(), i + 1);
@@ -69,7 +69,7 @@ DEIM<T>::DEIM (PtrList<T>& s, int MaxModes, word FunctionName)
         magicPoints.append(ind_max);
     }
 
-    MatrixOnline = U * ((P.transpose() * U).inverse());
+    MatrixOnline = U * ((P.transpose() * U).fullPivLu().inverse());
 }
 
 template DEIM<volScalarField>::DEIM(PtrList<volScalarField>& s, int MaxModes,
@@ -78,8 +78,8 @@ template DEIM<volVectorField>::DEIM(PtrList<volVectorField>& s, int MaxModes,
                                     word FunctionName);
 
 
-template<typename T>
-DEIM<T>::DEIM (PtrList<T>& s, int MaxModesA, int MaxModesB, word MatrixName)
+template<>
+DEIM<fvScalarMatrix>::DEIM (PtrList<fvScalarMatrix>& s, int MaxModesA, int MaxModesB, word MatrixName)
     :
     SnapShotsMatrix(s),
     MaxModesA(MaxModesA),
@@ -117,7 +117,7 @@ DEIM<T>::DEIM (PtrList<T>& s, int MaxModesA, int MaxModesB, word MatrixName)
     {
         AA = EigenFunctions::innerProduct(PA, UA);
         bA = EigenFunctions::innerProduct(PA, std::get<0>(Matrix_Modes)[i]);
-        cA = AA.colPivHouseholderQr().solve(bA);
+        cA = AA.fullPivLu().solve(bA);
         rA = std::get<0>(Matrix_Modes)[i] - EigenFunctions::MVproduct(UA, cA);
         double maxA = EigenFunctions::max(rA, ind_rowA, ind_colA);
         rhoA.conservativeResize(i + 1);
@@ -136,7 +136,7 @@ DEIM<T>::DEIM (PtrList<T>& s, int MaxModesA, int MaxModesB, word MatrixName)
         PA.append(Pnow);
     }
 
-    Eigen::MatrixXd Aaux = EigenFunctions::innerProduct(PA, UA).inverse();
+    Eigen::MatrixXd Aaux = EigenFunctions::innerProduct(PA, UA).fullPivLu().inverse();
     MatrixOnlineA = EigenFunctions::MMproduct(UA, Aaux);
     Eigen::MatrixXd AB;
     Eigen::VectorXd bB;
@@ -158,7 +158,7 @@ DEIM<T>::DEIM (PtrList<T>& s, int MaxModesA, int MaxModesB, word MatrixName)
     {
         AB = PB.transpose() * UB;
         bB = PB.transpose() * std::get<1>(Matrix_Modes)[i];
-        cB = AB.colPivHouseholderQr().solve(bB);
+        cB = AB.fullPivLu().solve(bB);
         rB = std::get<1>(Matrix_Modes)[i] - UB * cB;
         maxB = rB.cwiseAbs().maxCoeff(&ind_rowB, &c1);
         ind_rowBOF = ind_rowB;
@@ -179,7 +179,7 @@ DEIM<T>::DEIM (PtrList<T>& s, int MaxModesA, int MaxModesB, word MatrixName)
     }
     else if (MaxModesB != 1)
     {
-        MatrixOnlineB = UB * ((PB.transpose() * UB).inverse());
+        MatrixOnlineB = UB * ((PB.transpose() * UB).fullPivLu().inverse());
     }
     else
     {
@@ -187,11 +187,114 @@ DEIM<T>::DEIM (PtrList<T>& s, int MaxModesA, int MaxModesB, word MatrixName)
     }
 }
 
-template DEIM<fvScalarMatrix>::DEIM (PtrList<fvScalarMatrix>& s, int MaxModesA,
-                                     int MaxModesB, word MatrixName);
-template DEIM<fvVectorMatrix>::DEIM (PtrList<fvVectorMatrix>& s, int MaxModesA,
-                                     int MaxModesB, word MatrixName);
+template<>
+DEIM<fvVectorMatrix>::DEIM (PtrList<fvVectorMatrix>& s, int MaxModesA, int MaxModesB, word MatrixName)
+    :
+    SnapShotsMatrix(s),
+    MaxModesA(MaxModesA),
+    MaxModesB(MaxModesB),
+    MatrixName(MatrixName)
 
+{
+    Eigen::MatrixXd AA;
+    Eigen::VectorXd bA;
+    Eigen::MatrixXd cA;
+    Eigen::SparseMatrix<double> rA;
+    Eigen::VectorXd rhoA(1);
+    Matrix_Modes = ITHACAPOD::DEIMmodes(SnapShotsMatrix, MaxModesA, MaxModesB,
+                                        MatrixName);
+    sizeM = std::get<1>(Matrix_Modes)[0].rows()/3;
+    int ind_rowA, ind_colA, xyz_rowA, xyz_colA;
+    ind_rowA = ind_colA = xyz_rowA = xyz_colA = 0;
+    double maxA = EigenFunctions::max(std::get<0>(Matrix_Modes)[0], ind_rowA,
+                                      ind_colA);
+    int ind_rowAOF = ind_rowA;
+    int ind_colAOF = ind_colA;
+    check3D_indices(ind_rowAOF, ind_colAOF, xyz_rowA, xyz_colA);
+    Pair <int> indA(ind_rowAOF, ind_colAOF);
+    Pair <int> xyzA(xyz_rowA, xyz_colA);
+    xyz_A.append(xyzA);
+    rhoA(0) = maxA;
+    magicPointsA.append(indA);
+    UA.append(std::get<0>(Matrix_Modes)[0]);
+    Eigen::SparseMatrix<double> Pnow(std::get<0>(Matrix_Modes)[0].rows(),
+                                     std::get<0>(Matrix_Modes)[0].cols());
+    Pnow.insert(ind_rowA, ind_colA) = 1;
+    PA.append(Pnow);
+
+    for (int i = 1; i < MaxModesA; i++)
+    {
+        AA = EigenFunctions::innerProduct(PA, UA);
+        bA = EigenFunctions::innerProduct(PA, std::get<0>(Matrix_Modes)[i]);
+        cA = AA.fullPivLu().solve(bA);
+        rA = std::get<0>(Matrix_Modes)[i] - EigenFunctions::MVproduct(UA, cA);
+        double maxA = EigenFunctions::max(rA, ind_rowA, ind_colA);
+        rhoA.conservativeResize(i + 1);
+        rhoA(i) = maxA;
+        int ind_rowAOF = ind_rowA;
+        int ind_colAOF = ind_colA;
+        check3D_indices(ind_rowAOF, ind_colAOF, xyz_rowA, xyz_colA);
+        Pair <int> indA(ind_rowAOF, ind_colAOF);
+        Pair <int> xyzA(xyz_rowA, xyz_colA);
+        xyz_A.append(xyzA);
+        magicPointsA.append(indA);
+        UA.append(std::get<0>(Matrix_Modes)[i]);
+        Eigen::SparseMatrix<double> Pnow(std::get<0>(Matrix_Modes)[0].rows(),
+                                         std::get<0>(Matrix_Modes)[0].cols());
+        Pnow.insert(ind_rowA, ind_colA) = 1;
+        PA.append(Pnow);
+    }
+
+    Eigen::MatrixXd Aaux = EigenFunctions::innerProduct(PA, UA).fullPivLu().inverse();
+    MatrixOnlineA = EigenFunctions::MMproduct(UA, Aaux);
+    Eigen::MatrixXd AB;
+    Eigen::VectorXd bB;
+    Eigen::VectorXd cB;
+    Eigen::VectorXd rB;
+    Eigen::VectorXd rhoB(1);
+    int ind_rowB, xyz_rowB, c1;
+    double maxB = std::get<1>(Matrix_Modes)[0].maxCoeff(&ind_rowB, &c1);
+    int ind_rowBOF = ind_rowB;
+    check3D_indices(ind_rowBOF, xyz_rowB);
+    rhoB(0) = maxB;
+    xyz_B.append(xyz_rowB);
+    magicPointsB.append(ind_rowBOF);
+    UB = std::get<1>(Matrix_Modes)[0];
+    PB.resize(UB.rows(), 1);
+    PB.insert(ind_rowB, 0) = 1;
+
+    for (int i = 1; i < MaxModesB; i++)
+    {
+        AB = PB.transpose() * UB;
+        bB = PB.transpose() * std::get<1>(Matrix_Modes)[i];
+        cB = AB.fullPivLu().solve(bB);
+        rB = std::get<1>(Matrix_Modes)[i] - UB * cB;
+        maxB = rB.cwiseAbs().maxCoeff(&ind_rowB, &c1);
+        ind_rowBOF = ind_rowB;
+        check3D_indices(ind_rowBOF, xyz_rowB);
+        xyz_B.append(xyz_rowB);
+        PB.conservativeResize((std::get<1>(Matrix_Modes)[i]).size(), i + 1);
+        PB.insert(ind_rowB, i) = 1;
+        UB.conservativeResize((std::get<1>(Matrix_Modes)[i]).size(), i + 1);
+        UB.col(i) =  std::get<1>(Matrix_Modes)[i];
+        rhoB.conservativeResize(i + 1);
+        rhoB(i) = maxB;
+        magicPointsB.append(ind_rowBOF);
+    }
+
+    if (MaxModesB == 1 && std::get<1>(Matrix_Modes)[0].norm() < 1e-8)
+    {
+        MatrixOnlineB = Eigen::MatrixXd::Zero(std::get<1>(Matrix_Modes)[0].rows(), 1);
+    }
+    else if (MaxModesB != 1)
+    {
+        MatrixOnlineB = UB * ((PB.transpose() * UB).fullPivLu().inverse());
+    }
+    else
+    {
+        MatrixOnlineB = UB;
+    }
+}
 
 template<typename T>
 template<typename S>
@@ -430,27 +533,33 @@ PtrList<S> DEIM<T>::generateSubmeshesVector(int layers, fvMesh& mesh, S field,
         ITHACAstream::exportSolution(Indici, "1", "./ITHACAoutput/DEIM/" + MatrixName
                                     );
     }
-
     return fieldsB;
 }
 
 template PtrList<volScalarField> DEIM<fvScalarMatrix>::generateSubmeshesVector(
     int layers, fvMesh& mesh, volScalarField field, int secondTime);
+
 template PtrList<volVectorField> DEIM<fvScalarMatrix>::generateSubmeshesVector(
     int layers, fvMesh& mesh, volVectorField field, int secondTime);
+
 template PtrList<surfaceScalarField>
 DEIM<fvScalarMatrix>::generateSubmeshesVector(int layers, fvMesh& mesh,
         surfaceScalarField field, int secondTime);
+
 template PtrList<surfaceVectorField>
 DEIM<fvScalarMatrix>::generateSubmeshesVector(int layers, fvMesh& mesh,
         surfaceVectorField field, int secondTime);
+
 template PtrList<volScalarField> DEIM<fvVectorMatrix>::generateSubmeshesVector(
     int layers, fvMesh& mesh, volScalarField field, int secondTime);
+
 template PtrList<volVectorField> DEIM<fvVectorMatrix>::generateSubmeshesVector(
     int layers, fvMesh& mesh, volVectorField field, int secondTime);
+
 template PtrList<surfaceScalarField>
 DEIM<fvVectorMatrix>::generateSubmeshesVector(int layers, fvMesh& mesh,
         surfaceScalarField field, int secondTime);
+
 template PtrList<surfaceVectorField>
 DEIM<fvVectorMatrix>::generateSubmeshesVector(int layers, fvMesh& mesh,
         surfaceVectorField field, int secondTime);
