@@ -86,9 +86,9 @@ ReducedUnsteadyNSTurb::ReducedUnsteadyNSTurb(UnsteadyNSTurb& fomProblem)
     }
 
     newtonObjectSUP = newtonUnsteadyNSTurbSUP(Nphi_u + Nphi_p, Nphi_u + Nphi_p,
-                      fomProblem);
+      fomProblem);
     newtonObjectPPE = newtonUnsteadyNSTurbPPE(Nphi_u + Nphi_p, Nphi_u + Nphi_p,
-                      fomProblem);
+      fomProblem);
 }
 
 
@@ -96,25 +96,35 @@ ReducedUnsteadyNSTurb::ReducedUnsteadyNSTurb(UnsteadyNSTurb& fomProblem)
 
 // Operator to evaluate the residual for the supremizer approach
 int newtonUnsteadyNSTurbSUP::operator()(const Eigen::VectorXd& x,
-                                        Eigen::VectorXd& fvec) const
+    Eigen::VectorXd& fvec) const
 {
     Eigen::VectorXd a_dot(Nphi_u);
     Eigen::VectorXd aTmp(Nphi_u);
     Eigen::VectorXd bTmp(Nphi_p);
     aTmp = x.head(Nphi_u);
     bTmp = x.tail(Nphi_p);
+<<<<<<< HEAD
 
     // Choose the order of the numerical difference scheme for approximating the time derivative
     if (problem->timeDerivativeSchemeOrder == "first")
+=======
+    // Choose the order of the numerical difference scheme for approximating the time derivative
+    if(problem->schemeOrder=="first")
+>>>>>>> 2d85667... Changes on unsteady turb classes
     {
         a_dot = (x.head(Nphi_u) - y_old.head(Nphi_u)) / dt;
     }
     else
     {
+<<<<<<< HEAD
         a_dot = (1.5 * x.head(Nphi_u) - 2 * y_old.head(Nphi_u) + 0.5 * yOldOld.head(
                      Nphi_u)) / dt;
     }
 
+=======
+        a_dot = (1.5*x.head(Nphi_u) - 2*y_old.head(Nphi_u)+0.5*yOldOld.head(Nphi_u)) / dt;
+    }
+>>>>>>> 2d85667... Changes on unsteady turb classes
     // Convective term
     Eigen::MatrixXd cc(1, 1);
     // Mom Term
@@ -141,8 +151,8 @@ int newtonUnsteadyNSTurbSUP::operator()(const Eigen::VectorXd& x,
     for (label i = 0; i < Nphi_u; i++)
     {
         cc = aTmp.transpose() * Eigen::SliceFromTensor(problem->C_tensor, 0,
-                i) * aTmp - gNut.transpose() *
-             Eigen::SliceFromTensor(problem->cTotalTensor, 0, i) * aTmp;
+            i) * aTmp - gNut.transpose() *
+        Eigen::SliceFromTensor(problem->cTotalTensor, 0, i) * aTmp;
         fvec(i) = - m5(i) + m1(i) - cc(0, 0) - m2(i);
 
         if (problem->bcMethod == "penalty")
@@ -170,7 +180,7 @@ int newtonUnsteadyNSTurbSUP::operator()(const Eigen::VectorXd& x,
 
 // Operator to evaluate the Jacobian for the supremizer approach
 int newtonUnsteadyNSTurbSUP::df(const Eigen::VectorXd& x,
-                                Eigen::MatrixXd& fjac) const
+    Eigen::MatrixXd& fjac) const
 {
     Eigen::NumericalDiff<newtonUnsteadyNSTurbSUP> numDiff(*this);
     numDiff.df(x, fjac);
@@ -181,25 +191,35 @@ int newtonUnsteadyNSTurbSUP::df(const Eigen::VectorXd& x,
 
 // Operator to evaluate the residual for the supremizer approach
 int newtonUnsteadyNSTurbPPE::operator()(const Eigen::VectorXd& x,
-                                        Eigen::VectorXd& fvec) const
+    Eigen::VectorXd& fvec) const
 {
     Eigen::VectorXd a_dot(Nphi_u);
     Eigen::VectorXd aTmp(Nphi_u);
     Eigen::VectorXd bTmp(Nphi_p);
     aTmp = x.head(Nphi_u);
     bTmp = x.tail(Nphi_p);
+<<<<<<< HEAD
 
     // Choose the order of the numerical difference scheme for approximating the time derivative
     if (problem->timeDerivativeSchemeOrder == "first")
+=======
+    // Choose the order of the numerical difference scheme for approximating the time derivative
+    if(problem->schemeOrder=="first")
+>>>>>>> 2d85667... Changes on unsteady turb classes
     {
         a_dot = (x.head(Nphi_u) - y_old.head(Nphi_u)) / dt;
     }
     else
     {
+<<<<<<< HEAD
         a_dot = (1.5 * x.head(Nphi_u) - 2 * y_old.head(Nphi_u) + 0.5 * yOldOld.head(
                      Nphi_u)) / dt;
     }
 
+=======
+        a_dot = (1.5*x.head(Nphi_u) - 2*y_old.head(Nphi_u)+0.5*yOldOld.head(Nphi_u)) / dt;
+    }    
+>>>>>>> 2d85667... Changes on unsteady turb classes
     // Convective terms
     Eigen::MatrixXd cc(1, 1);
     Eigen::MatrixXd gg(1, 1);
@@ -232,8 +252,8 @@ int newtonUnsteadyNSTurbPPE::operator()(const Eigen::VectorXd& x,
     for (label i = 0; i < Nphi_u; i++)
     {
         cc = aTmp.transpose() * Eigen::SliceFromTensor(problem->C_tensor, 0,
-                i) * aTmp - gNut.transpose() *
-             Eigen::SliceFromTensor(problem->cTotalTensor, 0, i) * aTmp;
+            i) * aTmp - gNut.transpose() *
+        Eigen::SliceFromTensor(problem->cTotalTensor, 0, i) * aTmp;
         fvec(i) = - m5(i) + m1(i) - cc(0, 0) - m2(i);
 
         if (problem->bcMethod == "penalty")
@@ -246,9 +266,9 @@ int newtonUnsteadyNSTurbPPE::operator()(const Eigen::VectorXd& x,
     {
         label k = j + Nphi_u;
         gg = aTmp.transpose() * Eigen::SliceFromTensor(problem->gTensor, 0,
-                j) * aTmp;
+            j) * aTmp;
         bb = aTmp.transpose() * Eigen::SliceFromTensor(problem->bc2Tensor, 0,
-                j) * aTmp;
+            j) * aTmp;
         //fvec(k) = m3(j, 0) - gg(0, 0) - m6(j, 0) + bb(0, 0);
         fvec(k) = m3(j, 0) + gg(0, 0) - m7(j, 0);
     }
@@ -266,7 +286,7 @@ int newtonUnsteadyNSTurbPPE::operator()(const Eigen::VectorXd& x,
 
 // Operator to evaluate the Jacobian for the supremizer approach
 int newtonUnsteadyNSTurbPPE::df(const Eigen::VectorXd& x,
-                                Eigen::MatrixXd& fjac) const
+    Eigen::MatrixXd& fjac) const
 {
     Eigen::NumericalDiff<newtonUnsteadyNSTurbPPE> numDiff(*this);
     numDiff.df(x, fjac);
@@ -277,18 +297,18 @@ int newtonUnsteadyNSTurbPPE::df(const Eigen::VectorXd& x,
 
 // * * * * * * * * * * * * * * * Solve Functions  * * * * * * * * * * * * * //
 void ReducedUnsteadyNSTurb::solveOnlineSUP(Eigen::MatrixXd vel,
-        label startSnap)
+    label startSnap)
 {
     M_Assert(exportEvery >= dt,
-             "The time step dt must be smaller than exportEvery.");
+       "The time step dt must be smaller than exportEvery.");
     M_Assert(storeEvery >= dt,
-             "The time step dt must be smaller than storeEvery.");
+       "The time step dt must be smaller than storeEvery.");
     M_Assert(ITHACAutilities::isInteger(storeEvery / dt) == true,
-             "The variable storeEvery must be an integer multiple of the time step dt.");
+       "The variable storeEvery must be an integer multiple of the time step dt.");
     M_Assert(ITHACAutilities::isInteger(exportEvery / dt) == true,
-             "The variable exportEvery must be an integer multiple of the time step dt.");
+       "The variable exportEvery must be an integer multiple of the time step dt.");
     M_Assert(ITHACAutilities::isInteger(exportEvery / storeEvery) == true,
-             "The variable exportEvery must be an integer multiple of the variable storeEvery.");
+       "The variable exportEvery must be an integer multiple of the variable storeEvery.");
     int numberOfStores = round(storeEvery / dt);
 
     if (problem->bcMethod == "lift")
@@ -305,7 +325,7 @@ void ReducedUnsteadyNSTurb::solveOnlineSUP(Eigen::MatrixXd vel,
     y.setZero();
     y.head(Nphi_u) = ITHACAutilities::get_coeffs(Usnapshots[startSnap], Umodes);
     y.tail(Nphi_p) = ITHACAutilities::get_coeffs_ortho(Psnapshots[startSnap],
-                     Pmodes);
+       Pmodes);
     int nextStore = 0;
     int counter2 = 0;
 
@@ -406,19 +426,19 @@ void ReducedUnsteadyNSTurb::solveOnlineSUP(Eigen::MatrixXd vel,
         newtonObjectSUP.yOldOld = newtonObjectSUP.y_old;
         newtonObjectSUP.y_old = y;
         std::cout << "################## Online solve N° " << count_online_solve <<
-                  " ##################" << std::endl;
+        " ##################" << std::endl;
         Info << "Time = " << time << endl;
         std::cout << "Solving for the parameter: " << vel_now << std::endl;
 
         if (res.norm() < 1e-5)
         {
             std::cout << green << "|F(x)| = " << res.norm() << " - Minimun reached in " <<
-                      hnls.iter << " iterations " << def << std::endl << std::endl;
+            hnls.iter << " iterations " << def << std::endl << std::endl;
         }
         else
         {
             std::cout << red << "|F(x)| = " << res.norm() << " - Minimun reached in " <<
-                      hnls.iter << " iterations " << def << std::endl << std::endl;
+            hnls.iter << " iterations " << def << std::endl << std::endl;
         }
 
         count_online_solve += 1;
@@ -447,26 +467,26 @@ void ReducedUnsteadyNSTurb::solveOnlineSUP(Eigen::MatrixXd vel,
 
     // Save the solution
     ITHACAstream::exportMatrix(online_solution, "red_coeff", "python",
-                               "./ITHACAoutput/red_coeff");
+     "./ITHACAoutput/red_coeff");
     ITHACAstream::exportMatrix(online_solution, "red_coeff", "matlab",
-                               "./ITHACAoutput/red_coeff");
+     "./ITHACAoutput/red_coeff");
     count_online_solve += 1;
 }
 
 // * * * * * * * * * * * * * * * Solve Functions  * * * * * * * * * * * * * //
 void ReducedUnsteadyNSTurb::solveOnlinePPE(Eigen::MatrixXd vel,
-        label startSnap)
+    label startSnap)
 {
     M_Assert(exportEvery >= dt,
-             "The time step dt must be smaller than exportEvery.");
+       "The time step dt must be smaller than exportEvery.");
     M_Assert(storeEvery >= dt,
-             "The time step dt must be smaller than storeEvery.");
+       "The time step dt must be smaller than storeEvery.");
     M_Assert(ITHACAutilities::isInteger(storeEvery / dt) == true,
-             "The variable storeEvery must be an integer multiple of the time step dt.");
+       "The variable storeEvery must be an integer multiple of the time step dt.");
     M_Assert(ITHACAutilities::isInteger(exportEvery / dt) == true,
-             "The variable exportEvery must be an integer multiple of the time step dt.");
+       "The variable exportEvery must be an integer multiple of the time step dt.");
     M_Assert(ITHACAutilities::isInteger(exportEvery / storeEvery) == true,
-             "The variable exportEvery must be an integer multiple of the variable storeEvery.");
+       "The variable exportEvery must be an integer multiple of the variable storeEvery.");
     int numberOfStores = round(storeEvery / dt);
 
     if (problem->bcMethod == "lift")
@@ -584,19 +604,19 @@ void ReducedUnsteadyNSTurb::solveOnlinePPE(Eigen::MatrixXd vel,
         newtonObjectPPE.yOldOld = newtonObjectPPE.y_old;
         newtonObjectPPE.y_old = y;
         std::cout << "################## Online solve N° " << count_online_solve <<
-                  " ##################" << std::endl;
+        " ##################" << std::endl;
         Info << "Time = " << time << endl;
         std::cout << "Solving for the parameter: " << vel_now << std::endl;
 
         if (res.norm() < 1e-5)
         {
             std::cout << green << "|F(x)| = " << res.norm() << " - Minimun reached in " <<
-                      hnls.iter << " iterations " << def << std::endl << std::endl;
+            hnls.iter << " iterations " << def << std::endl << std::endl;
         }
         else
         {
             std::cout << red << "|F(x)| = " << res.norm() << " - Minimun reached in " <<
-                      hnls.iter << " iterations " << def << std::endl << std::endl;
+            hnls.iter << " iterations " << def << std::endl << std::endl;
         }
 
         count_online_solve += 1;
@@ -625,9 +645,9 @@ void ReducedUnsteadyNSTurb::solveOnlinePPE(Eigen::MatrixXd vel,
 
     // Save the solution
     ITHACAstream::exportMatrix(online_solution, "red_coeff", "python",
-                               "./ITHACAoutput/red_coeff");
+     "./ITHACAoutput/red_coeff");
     ITHACAstream::exportMatrix(online_solution, "red_coeff", "matlab",
-                               "./ITHACAoutput/red_coeff");
+     "./ITHACAoutput/red_coeff");
     count_online_solve += 1;
 }
 
@@ -728,7 +748,7 @@ void ReducedUnsteadyNSTurb::reconstructSUP(fileName folder)
 Eigen::MatrixXd ReducedUnsteadyNSTurb::setOnlineVelocity(Eigen::MatrixXd vel)
 {
     assert(problem->inletIndex.rows() == vel.rows()
-           && "Imposed boundary conditions dimensions do not match given values matrix dimensions");
+     && "Imposed boundary conditions dimensions do not match given values matrix dimensions");
     Eigen::MatrixXd vel_scal;
     vel_scal.resize(vel.rows(), vel.cols());
 
@@ -738,7 +758,7 @@ Eigen::MatrixXd ReducedUnsteadyNSTurb::setOnlineVelocity(Eigen::MatrixXd vel)
         label l = problem->inletIndex(k, 1);
         scalar area = gSum(problem->liftfield[0].mesh().magSf().boundaryField()[p]);
         scalar u_lf = gSum(problem->liftfield[k].mesh().magSf().boundaryField()[p] *
-                           problem->liftfield[k].boundaryField()[p]).component(l) / area;
+         problem->liftfield[k].boundaryField()[p]).component(l) / area;
         vel_scal(k, 0) = vel(k, 0) / u_lf;
     }
 

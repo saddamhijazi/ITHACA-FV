@@ -83,10 +83,16 @@ class UnsteadyNSTurb: public unsteadyNS
         PtrList<volScalarField> nutModes;
 
         /// Create a Rbf splines for interpolation
+        std::vector<SPLINTER::DataTable*> samplesInit;
+
+        /// Create a Rbf splines for interpolation
         std::vector<SPLINTER::DataTable*> samples;
 
         /// Create a samples for interpolation
         std::vector<SPLINTER::RBFSpline*> rbfSplines;
+
+        /// Create a samples for interpolation
+        std::vector<SPLINTER::RBFSpline*> rbfSplinesInit;
 
         /// Turbulent viscosity term
         Eigen::MatrixXd btMatrix;
@@ -103,11 +109,20 @@ class UnsteadyNSTurb: public unsteadyNS
         List <Eigen::MatrixXd> cTotalMatrix;
         Eigen::Tensor<double, 3 > cTotalTensor;
 
+        /// Velocity coefficients for RBF
+        Eigen::MatrixXd velRBF;
+
+        /// Initial velocity coefficients for RBF
+        Eigen::MatrixXd velRBF0;
+
         /// Total B Matrix
         Eigen::MatrixXd bTotalMatrix;
 
         /// The matrix of L2 projection coefficients for the eddy viscosity
         Eigen::MatrixXd coeffL2;
+
+        /// The matrix initial values of L2 projection coefficients for the eddy viscosity
+        Eigen::MatrixXd coeff0L2;
 
         /// The vector of L2 projection coefficients for the eddy viscosity snapshot
         Eigen::VectorXd nutCoeff;
