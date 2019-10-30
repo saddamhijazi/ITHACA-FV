@@ -103,28 +103,16 @@ int newtonUnsteadyNSTurbSUP::operator()(const Eigen::VectorXd& x,
     Eigen::VectorXd bTmp(Nphi_p);
     aTmp = x.head(Nphi_u);
     bTmp = x.tail(Nphi_p);
-<<<<<<< HEAD
-
     // Choose the order of the numerical difference scheme for approximating the time derivative
     if (problem->timeDerivativeSchemeOrder == "first")
-=======
-    // Choose the order of the numerical difference scheme for approximating the time derivative
-    if(problem->schemeOrder=="first")
->>>>>>> 2d85667... Changes on unsteady turb classes
     {
         a_dot = (x.head(Nphi_u) - y_old.head(Nphi_u)) / dt;
     }
     else
     {
-<<<<<<< HEAD
         a_dot = (1.5 * x.head(Nphi_u) - 2 * y_old.head(Nphi_u) + 0.5 * yOldOld.head(
-                     Nphi_u)) / dt;
+         Nphi_u)) / dt;
     }
-
-=======
-        a_dot = (1.5*x.head(Nphi_u) - 2*y_old.head(Nphi_u)+0.5*yOldOld.head(Nphi_u)) / dt;
-    }
->>>>>>> 2d85667... Changes on unsteady turb classes
     // Convective term
     Eigen::MatrixXd cc(1, 1);
     // Mom Term
@@ -144,7 +132,7 @@ int newtonUnsteadyNSTurbSUP::operator()(const Eigen::VectorXd& x,
         for (label l = 0; l < N_BC; l++)
         {
             penaltyU.col(l) = bc(l) * problem->bcVelVec[l] - problem->bcVelMat[l] *
-                              aTmp;
+            aTmp;
         }
     }
 
@@ -198,28 +186,16 @@ int newtonUnsteadyNSTurbPPE::operator()(const Eigen::VectorXd& x,
     Eigen::VectorXd bTmp(Nphi_p);
     aTmp = x.head(Nphi_u);
     bTmp = x.tail(Nphi_p);
-<<<<<<< HEAD
-
     // Choose the order of the numerical difference scheme for approximating the time derivative
     if (problem->timeDerivativeSchemeOrder == "first")
-=======
-    // Choose the order of the numerical difference scheme for approximating the time derivative
-    if(problem->schemeOrder=="first")
->>>>>>> 2d85667... Changes on unsteady turb classes
     {
         a_dot = (x.head(Nphi_u) - y_old.head(Nphi_u)) / dt;
     }
     else
     {
-<<<<<<< HEAD
         a_dot = (1.5 * x.head(Nphi_u) - 2 * y_old.head(Nphi_u) + 0.5 * yOldOld.head(
-                     Nphi_u)) / dt;
+         Nphi_u)) / dt;
     }
-
-=======
-        a_dot = (1.5*x.head(Nphi_u) - 2*y_old.head(Nphi_u)+0.5*yOldOld.head(Nphi_u)) / dt;
-    }    
->>>>>>> 2d85667... Changes on unsteady turb classes
     // Convective terms
     Eigen::MatrixXd cc(1, 1);
     Eigen::MatrixXd gg(1, 1);
@@ -245,7 +221,7 @@ int newtonUnsteadyNSTurbPPE::operator()(const Eigen::VectorXd& x,
         for (label l = 0; l < N_BC; l++)
         {
             penaltyU.col(l) = bc(l) * problem->bcVelVec[l] - problem->bcVelMat[l] *
-                              aTmp;
+            aTmp;
         }
     }
 
