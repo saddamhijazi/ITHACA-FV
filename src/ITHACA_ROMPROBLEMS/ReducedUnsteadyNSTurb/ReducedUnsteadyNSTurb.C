@@ -603,6 +603,11 @@ void ReducedUnsteadyNSTurb::solveOnlinePPE(Eigen::MatrixXd vel,
         counter2++;
         nextStore += numberOfStores;
     }
+    
+    online_solution[counter] = tmp_sol;
+    counter ++;
+    counter2++;
+    nextStore += numberOfStores;
 
     // Start the time loop
     while (time < finalTime)
