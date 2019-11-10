@@ -103,6 +103,7 @@ int newtonUnsteadyNSTurbSUP::operator()(const Eigen::VectorXd& x,
     Eigen::VectorXd bTmp(Nphi_p);
     aTmp = x.head(Nphi_u);
     bTmp = x.tail(Nphi_p);
+
     // Choose the order of the numerical difference scheme for approximating the time derivative
     if (problem->timeDerivativeSchemeOrder == "first")
     {
@@ -111,8 +112,9 @@ int newtonUnsteadyNSTurbSUP::operator()(const Eigen::VectorXd& x,
     else
     {
         a_dot = (1.5 * x.head(Nphi_u) - 2 * y_old.head(Nphi_u) + 0.5 * yOldOld.head(
-         Nphi_u)) / dt;
+           Nphi_u)) / dt;
     }
+
     // Convective term
     Eigen::MatrixXd cc(1, 1);
     // Mom Term
@@ -186,6 +188,7 @@ int newtonUnsteadyNSTurbPPE::operator()(const Eigen::VectorXd& x,
     Eigen::VectorXd bTmp(Nphi_p);
     aTmp = x.head(Nphi_u);
     bTmp = x.tail(Nphi_p);
+
     // Choose the order of the numerical difference scheme for approximating the time derivative
     if (problem->timeDerivativeSchemeOrder == "first")
     {
@@ -194,8 +197,9 @@ int newtonUnsteadyNSTurbPPE::operator()(const Eigen::VectorXd& x,
     else
     {
         a_dot = (1.5 * x.head(Nphi_u) - 2 * y_old.head(Nphi_u) + 0.5 * yOldOld.head(
-         Nphi_u)) / dt;
+           Nphi_u)) / dt;
     }
+
     // Convective terms
     Eigen::MatrixXd cc(1, 1);
     Eigen::MatrixXd gg(1, 1);
@@ -299,9 +303,11 @@ void ReducedUnsteadyNSTurb::solveOnlineSUP(Eigen::MatrixXd vel,
     // Create and resize the solution vector
     y.resize(Nphi_u + Nphi_p, 1);
     y.setZero();
-    y.head(Nphi_u) = ITHACAutilities::get_coeffs(Usnapshots[startSnap], Umodes);
-    y.tail(Nphi_p) = ITHACAutilities::get_coeffs_ortho(Psnapshots[startSnap],
-       Pmodes);
+    //y.head(Nphi_u) = ITHACAutilities::get_coeffs(Usnapshots[startSnap], Umodes);
+    //y.tail(Nphi_p) = ITHACAutilities::get_coeffs_ortho(Psnapshots[startSnap],
+    //   Pmodes);
+    y.head(Nphi_u) = initCond.col(0).head(Nphi_u);
+    y.tail(Nphi_p) = initCond.col(0).tail(Nphi_p);
     int nextStore = 0;
     int counter2 = 0;
 
@@ -357,6 +363,7 @@ void ReducedUnsteadyNSTurb::solveOnlineSUP(Eigen::MatrixXd vel,
     // This part up to the while loop is just to compute the eddy viscosity field at time = startTime if time is not equal to zero
     if (time != 0)
     {
+        Info << "inside time 0" << endl;
         Eigen::VectorXd gNut0;
         gNut0.resize(nphiNut);
         Eigen::VectorXd tv0;
@@ -364,7 +371,7 @@ void ReducedUnsteadyNSTurb::solveOnlineSUP(Eigen::MatrixXd vel,
 
         for (label i = 0; i < nphiNut; i++)
         {
-            gNut0(i) = problem->rbfSplines[i]->eval(tv0);
+            gNut0(i) = problem->rbfSplinesInit[i]->eval(tv0);
         }
 
         rbfCoeffMat(0, counter2) = time;
@@ -376,15 +383,61 @@ void ReducedUnsteadyNSTurb::solveOnlineSUP(Eigen::MatrixXd vel,
     // Start the time loop
     while (time < finalTime)
     {
+        //Info << "inside first iteration" << endl;
         time = time + dt;
+        //Eigen::VectorXd tv1;
+        // Eigen::VectorXd tv;
+        // int nU = problem->velRBF.cols();
+        // tv = y.head(Nphi_u);
+        // for (label i = 0; i < nphiNut; i++)
+        // {
+        //     newtonObjectSUP.gNut(i) = problem->rbfSplines[i]->eval(tv);
+        // }
         Eigen::VectorXd tv;
-        tv = y.head(Nphi_u);
 
-        for (label i = 0; i < nphiNut; i++)
+        if (counter2 > 0)
         {
-            newtonObjectSUP.gNut(i) = problem->rbfSplines[i]->eval(tv);
+            Eigen::VectorXd tv1;
+            Eigen::VectorXd tv2;
+            tv1 = newtonObjectSUP.yOldOld.head(Nphi_u);
+            tv2 = y.head(Nphi_u);
+            tv.resize(2 * Nphi_u+muStar.size());
+            tv << muStar,tv1, tv2;
+
+            for (label i = 0; i < nphiNut; i++)
+            {
+                newtonObjectSUP.gNut(i) = problem->rbfSplines[i]->eval(tv);
+            }
+        }
+        else
+        {
+            tv.resize(Nphi_u+muStar.size());
+            tv.head(muStar.size()) = muStar;
+            tv.tail(Nphi_u) = y.head(Nphi_u);
+
+            for (label i = 0; i < nphiNut; i++)
+            {
+                newtonObjectSUP.gNut(i) = problem->rbfSplinesInit[i]->eval(tv);
+            }
         }
 
+        // std::cout << "first a is" << tv << std::endl;
+        // std::cout << "first g(a) is" << newtonObjectSUP.gNut << std::endl;
+        // if(counter2==3)
+        // {
+        //     exit(0);
+        // }
+        // Eigen::VectorXd zStar;
+        // zStar.resize(muStar.size()+1);
+        // zStar.head(muStar.size()) = muStar;
+        // zStar(muStar.size(),0) = time;
+        // for (label i = 0; i < nphiNut; i++)
+        // {
+        //     newtonObjectSUP.gNut(i) = problem->rbfSplinesTimePar[i]->eval(zStar);
+        // }
+        // std::cout << "zStar is" << zStar << std::endl;
+        // std::cout << "first g(z) is" << newtonObjectSUP.gNut << std::endl;
+        // exit(0);
         Eigen::VectorXd res(y);
         res.setZero();
         hnls.solve(y);

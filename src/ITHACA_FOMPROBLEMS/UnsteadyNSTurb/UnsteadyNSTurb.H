@@ -88,14 +88,23 @@ class UnsteadyNSTurb: public unsteadyNS
         /// Create a Rbf splines for interpolation
         std::vector<SPLINTER::DataTable*> samples;
 
+        /// Create a Rbf splines for interpolation
+        std::vector<SPLINTER::DataTable*> samplesTimePar;
+
         /// Create a samples for interpolation
         std::vector<SPLINTER::RBFSpline*> rbfSplines;
+
+        /// Create a samples for interpolation
+        std::vector<SPLINTER::RBFSpline*> rbfSplinesTimePar;
 
         /// Create a samples for interpolation
         std::vector<SPLINTER::RBFSpline*> rbfSplinesInit;
 
         /// Turbulent viscosity term
         Eigen::MatrixXd btMatrix;
+
+        /// Time-parameter combined matrix
+        Eigen::MatrixXd z;
 
         /// Turbulent viscosity tensor
         List <Eigen::MatrixXd> ct2Matrix;
@@ -223,6 +232,21 @@ class UnsteadyNSTurb: public unsteadyNS
         void projectPPE(fileName folder, label NUmodes, label NPmodes, label NSUPmodes,
                         label nNutModes);
 
+        //--------------------------------------------------------------------------
+        /// @brief      { function_description }
+        ///
+        /// @param[in]  A            { parameter_description }
+        /// @param[in]  initSnapInd  The initialize snap ind
+        ///
+        /// @return     { description_of_the_return_value }
+        ///
+        List < Eigen::MatrixXd > rbfModifiedCoeffs(Eigen::MatrixXd A, Eigen::MatrixXd G,
+                Eigen::VectorXd initSnapInd);
+
+        ///
+        List < Eigen::MatrixXd > rbfModifiedCoeffsZ(Eigen::MatrixXd A,
+                Eigen::MatrixXd G,
+                Eigen::VectorXd initSnapInd);
 };
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //

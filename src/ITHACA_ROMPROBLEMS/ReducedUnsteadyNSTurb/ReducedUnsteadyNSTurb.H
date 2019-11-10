@@ -147,14 +147,27 @@ class ReducedUnsteadyNSTurb: public reducedUnsteadyNS
         /// List of pointers to store the modes for the eddy viscosity
         PtrList<volScalarField> nutModes;
 
+        /// The pressure initial snapshots
+        PtrList<volScalarField> pInit;
+
+        /// The velocity initial snapshots
+        PtrList<volVectorField> uInit;
+
         /// The matrix of the eddy viscosity RBF interoplated coefficients
         Eigen::MatrixXd rbfCoeffMat;
+
+        /// The matrix of the eddy viscosity RBF interoplated coefficients
+        Eigen::MatrixXd initCond;
 
         /// Function object to call the non linear solver sup approach
         newtonUnsteadyNSTurbSUP newtonObjectSUP;
 
         /// Function object to call the non linear solver PPE approach
         newtonUnsteadyNSTurbPPE newtonObjectPPE;
+
+        /// Online parameter value
+        Eigen::VectorXd muStar;
+
 
         // Functions
 
