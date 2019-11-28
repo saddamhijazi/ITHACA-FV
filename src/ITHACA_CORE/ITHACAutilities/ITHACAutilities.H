@@ -277,6 +277,9 @@ class ITHACAutilities
         static Eigen::MatrixXd error_listfields_abs(PtrList<TypeField>& fields1,
                 PtrList<TypeField>& fields2);
 
+
+        static PtrList<volScalarField> averageSubtract(PtrList<volScalarField>
+                nutFields, Eigen::MatrixXd ind, PtrList<volScalarField>& nutAve);
         //--------------------------------------------------------------------------
         /// Computes a Mass Matrix from a list of Basis Functions (vectorial) for L2 projection
         ///

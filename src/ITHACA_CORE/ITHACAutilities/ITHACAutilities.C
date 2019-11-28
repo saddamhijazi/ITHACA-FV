@@ -969,6 +969,41 @@ void ITHACAutilities::assignBC(volVectorField& s, label BC_ind,
     }
 }
 
+PtrList<volScalarField> ITHACAutilities::averageSubtract(PtrList<volScalarField>
+        nutFields, Eigen::MatrixXd ind, PtrList<volScalarField>& nutAve)
+{
+    PtrList<volScalarField> nutAveSubtracted;
+    Eigen::VectorXd newInd;
+    newInd.resize(ind.size() + 1);
+    newInd.head(ind.size()) = ind;
+    newInd(ind.size()) = nutFields.size();
+
+    for (label i = 0; i < ind.size(); i++)
+    {
+        volScalarField ave("nut", nutFields[0] * 0);
+
+        for (label j = newInd(i); j < newInd(i + 1); j++)
+        {
+            ave += nutFields[j];
+        }
+
+        ave /= newInd(i + 1) - newInd(i);
+        nutAve.append(ave);
+    }
+
+    for (label i = 0; i < ind.size(); i++)
+    {
+        for (label j = newInd(i); j < newInd(i + 1); j++)
+        {
+            volScalarField nutNew("nut", nutFields[0] * 0);
+            nutNew = nutFields[j] - nutAve[i];
+            nutAveSubtracted.append(nutNew);
+        }
+    }
+
+    return nutAveSubtracted;
+}
+
 Eigen::MatrixXd ITHACAutilities::parTimeCombMat(List<Eigen::VectorXd>
         acquiredSnapshotsTimes,
         Eigen::MatrixXd parameters)

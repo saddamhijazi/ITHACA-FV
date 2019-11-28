@@ -82,6 +82,9 @@ class UnsteadyNSTurb: public unsteadyNS
         /// List of POD modes for eddy viscosity
         PtrList<volScalarField> nutModes;
 
+        /// List of for eddy viscosity averaged fields
+        PtrList<volScalarField> nutAve;
+
         /// Create a Rbf splines for interpolation
         std::vector<SPLINTER::DataTable*> samplesInit;
 
@@ -107,16 +110,17 @@ class UnsteadyNSTurb: public unsteadyNS
         Eigen::MatrixXd z;
 
         /// Turbulent viscosity tensor
-        List <Eigen::MatrixXd> ct2Matrix;
         Eigen::Tensor<double, 3 > ct2Tensor;
+        Eigen::Tensor<double, 3 > ct2AveTensor;
+
 
         /// Turbulent viscosity tensor
-        List <Eigen::MatrixXd> ct1Matrix;
         Eigen::Tensor<double, 3 > ct1Tensor;
+        Eigen::Tensor<double, 3 > ct1AveTensor;
 
         /// Total Turbulent tensor
-        List <Eigen::MatrixXd> cTotalMatrix;
         Eigen::Tensor<double, 3 > cTotalTensor;
+        Eigen::Tensor<double, 3 > cTotalAveTensor;
 
         /// Velocity coefficients for RBF
         Eigen::MatrixXd velRBF;
@@ -135,6 +139,9 @@ class UnsteadyNSTurb: public unsteadyNS
 
         /// The vector of L2 projection coefficients for the eddy viscosity snapshot
         Eigen::VectorXd nutCoeff;
+
+        /// RBF functions radius
+        double e=1;
 
         /// Number of viscoisty modes used for the projection
         label nNutModes;
@@ -240,6 +247,13 @@ class UnsteadyNSTurb: public unsteadyNS
         ///
         /// @return     { description_of_the_return_value }
         ///
+
+        Eigen::Tensor<double, 3> turbulenceAveTensor1(label NUmodes,
+                label NSUPmodes);
+
+        Eigen::Tensor<double, 3> turbulenceAveTensor2(label NUmodes,
+                label NSUPmodes);
+
         List < Eigen::MatrixXd > rbfModifiedCoeffs(Eigen::MatrixXd A, Eigen::MatrixXd G,
                 Eigen::VectorXd initSnapInd);
 
@@ -247,6 +261,15 @@ class UnsteadyNSTurb: public unsteadyNS
         List < Eigen::MatrixXd > rbfModifiedCoeffsZ(Eigen::MatrixXd A,
                 Eigen::MatrixXd G,
                 Eigen::VectorXd initSnapInd);
+
+        List < Eigen::MatrixXd > rbfModifiedCoeffsZTimeDiff(Eigen::MatrixXd A,
+                Eigen::MatrixXd G, Eigen::VectorXd initSnapInd, Eigen::VectorXd timeSnap);
+
+        Eigen::MatrixXd rbfModifiedCoeffsZDerivative(Eigen::MatrixXd A,
+                Eigen::VectorXd initSnapInd, Eigen::VectorXd timeSnap);
+
+        Eigen::MatrixXd rbfModifiedCoeffsDerivative(Eigen::MatrixXd A,
+                Eigen::VectorXd initSnapInd, Eigen::VectorXd timeSnap);
 };
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //

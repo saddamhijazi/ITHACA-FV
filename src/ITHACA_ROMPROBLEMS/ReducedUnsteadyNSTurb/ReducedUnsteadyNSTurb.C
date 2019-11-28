@@ -49,6 +49,7 @@ ReducedUnsteadyNSTurb::ReducedUnsteadyNSTurb(UnsteadyNSTurb& fomProblem)
     Nphi_u = problem->B_matrix.rows();
     Nphi_p = problem->K_matrix.cols();
     nphiNut = problem->cTotalTensor.dimension(1);
+    nphiVel = problem->liftfield.size() + problem->NUmodes;
 
     // Create locally the velocity modes
     for (label k = 0; k < problem->liftfield.size(); k++)
@@ -89,6 +90,9 @@ ReducedUnsteadyNSTurb::ReducedUnsteadyNSTurb(UnsteadyNSTurb& fomProblem)
       fomProblem);
     newtonObjectPPE = newtonUnsteadyNSTurbPPE(Nphi_u + Nphi_p, Nphi_u + Nphi_p,
       fomProblem);
+    newtonObjectSUPAve = newtonUnsteadyNSTurbSUPAve(Nphi_u + Nphi_p,
+     Nphi_u + Nphi_p,
+     fomProblem);
 }
 
 
@@ -112,7 +116,7 @@ int newtonUnsteadyNSTurbSUP::operator()(const Eigen::VectorXd& x,
     else
     {
         a_dot = (1.5 * x.head(Nphi_u) - 2 * y_old.head(Nphi_u) + 0.5 * yOldOld.head(
-           Nphi_u)) / dt;
+         Nphi_u)) / dt;
     }
 
     // Convective term
@@ -177,6 +181,90 @@ int newtonUnsteadyNSTurbSUP::df(const Eigen::VectorXd& x,
     return 0;
 }
 
+// Operator to evaluate the residual for the supremizer approach
+int newtonUnsteadyNSTurbSUPAve::operator()(const Eigen::VectorXd& x,
+    Eigen::VectorXd& fvec) const
+{
+    Eigen::VectorXd a_dot(Nphi_u);
+    Eigen::VectorXd aTmp(Nphi_u);
+    Eigen::VectorXd bTmp(Nphi_p);
+    aTmp = x.head(Nphi_u);
+    bTmp = x.tail(Nphi_p);
+
+    // Choose the order of the numerical difference scheme for approximating the time derivative
+    if (problem->timeDerivativeSchemeOrder == "first")
+    {
+        a_dot = (x.head(Nphi_u) - y_old.head(Nphi_u)) / dt;
+    }
+    else
+    {
+        a_dot = (1.5 * x.head(Nphi_u) - 2 * y_old.head(Nphi_u) + 0.5 * yOldOld.head(
+         Nphi_u)) / dt;
+    }
+
+    // Convective term
+    Eigen::MatrixXd cc(1, 1);
+    // Mom Term
+    Eigen::VectorXd m1 = problem->bTotalMatrix * aTmp * nu;
+    // Gradient of pressure
+    Eigen::VectorXd m2 = problem->K_matrix * bTmp;
+    // Mass Term
+    Eigen::VectorXd m5 = problem->M_matrix * a_dot;
+    // Pressure Term
+    Eigen::VectorXd m3 = problem->P_matrix * aTmp;
+    // Penalty term
+    Eigen::MatrixXd penaltyU = Eigen::MatrixXd::Zero(Nphi_u, N_BC);
+
+    // Term for penalty method
+    if (problem->bcMethod == "penalty")
+    {
+        for (label l = 0; l < N_BC; l++)
+        {
+            penaltyU.col(l) = bc(l) * problem->bcVelVec[l] - problem->bcVelMat[l] *
+            aTmp;
+        }
+    }
+
+    for (label i = 0; i < Nphi_u; i++)
+    {
+        cc = aTmp.transpose() * Eigen::SliceFromTensor(problem->C_tensor, 0,
+            i) * aTmp - gNut.transpose() *
+        Eigen::SliceFromTensor(problem->cTotalTensor, 0,
+            i) * aTmp - gNutAve.transpose() *
+        Eigen::SliceFromTensor(problem->cTotalAveTensor, 0, i) * aTmp;
+        fvec(i) = - m5(i) + m1(i) - cc(0, 0) - m2(i);
+
+        if (problem->bcMethod == "penalty")
+        {
+            fvec(i) += ((penaltyU * tauU)(i, 0));
+        }
+    }
+
+    for (label j = 0; j < Nphi_p; j++)
+    {
+        label k = j + Nphi_u;
+        fvec(k) = m3(j);
+    }
+
+    if (problem->bcMethod == "lift")
+    {
+        for (label j = 0; j < N_BC; j++)
+        {
+            fvec(j) = x(j) - bc(j);
+        }
+    }
+
+    return 0;
+}
+
+// Operator to evaluate the Jacobian for the supremizer approach
+int newtonUnsteadyNSTurbSUPAve::df(const Eigen::VectorXd& x,
+   Eigen::MatrixXd& fjac) const
+{
+    Eigen::NumericalDiff<newtonUnsteadyNSTurbSUPAve> numDiff(*this);
+    numDiff.df(x, fjac);
+    return 0;
+}
 // * * * * * * * * * * * * * * * Operators PPE * * * * * * * * * * * * * * * //
 
 // Operator to evaluate the residual for the supremizer approach
@@ -197,7 +285,7 @@ int newtonUnsteadyNSTurbPPE::operator()(const Eigen::VectorXd& x,
     else
     {
         a_dot = (1.5 * x.head(Nphi_u) - 2 * y_old.head(Nphi_u) + 0.5 * yOldOld.head(
-           Nphi_u)) / dt;
+         Nphi_u)) / dt;
     }
 
     // Convective terms
@@ -280,15 +368,15 @@ void ReducedUnsteadyNSTurb::solveOnlineSUP(Eigen::MatrixXd vel,
     label startSnap)
 {
     M_Assert(exportEvery >= dt,
-       "The time step dt must be smaller than exportEvery.");
+     "The time step dt must be smaller than exportEvery.");
     M_Assert(storeEvery >= dt,
-       "The time step dt must be smaller than storeEvery.");
+     "The time step dt must be smaller than storeEvery.");
     M_Assert(ITHACAutilities::isInteger(storeEvery / dt) == true,
-       "The variable storeEvery must be an integer multiple of the time step dt.");
+     "The variable storeEvery must be an integer multiple of the time step dt.");
     M_Assert(ITHACAutilities::isInteger(exportEvery / dt) == true,
-       "The variable exportEvery must be an integer multiple of the time step dt.");
+     "The variable exportEvery must be an integer multiple of the time step dt.");
     M_Assert(ITHACAutilities::isInteger(exportEvery / storeEvery) == true,
-       "The variable exportEvery must be an integer multiple of the variable storeEvery.");
+     "The variable exportEvery must be an integer multiple of the variable storeEvery.");
     int numberOfStores = round(storeEvery / dt);
 
     if (problem->bcMethod == "lift")
@@ -347,7 +435,7 @@ void ReducedUnsteadyNSTurb::solveOnlineSUP(Eigen::MatrixXd vel,
     tmp_sol(0) = time;
     tmp_sol.col(0).tail(y.rows()) = y;
 
-    if (time != 0)
+    if ((time != 0) || (startFromZero == true))
     {
         online_solution[counter] = tmp_sol;
         counter ++;
@@ -361,19 +449,44 @@ void ReducedUnsteadyNSTurb::solveOnlineSUP(Eigen::MatrixXd vel,
     Color::Modifier def(Color::FG_DEFAULT);
 
     // This part up to the while loop is just to compute the eddy viscosity field at time = startTime if time is not equal to zero
-    if (time != 0)
+    if ((time != 0) || (startFromZero == true))
     {
         Info << "inside time 0" << endl;
         Eigen::VectorXd gNut0;
         gNut0.resize(nphiNut);
-        Eigen::VectorXd tv0;
-        tv0 = y.head(Nphi_u);
+        Eigen::VectorXd tv;
+        // Eigen::VectorXd tv1;
+        // Eigen::VectorXd tv2;
+        // Eigen::VectorXd tv3;
+        // Eigen::VectorXd aDer;
+        // aDer = (y.head(Nphi_u) - newtonObjectSUP.yOldOld.head(Nphi_u))/dt;
+        // tv3.resize(1);
+        // tv3(0,0) = dt;
+        // tv1 = y.head(Nphi_u);
+        // tv2 = aDer;
+        // tv.resize(2 * Nphi_u + muStar.size()+1);
+        // tv << muStar, tv1, tv2,tv3;
+        tv.resize(muStar.size() + Nphi_u);
+        tv << muStar, y.head(Nphi_u);
 
-        for (label i = 0; i < nphiNut; i++)
+        if (readViscCoeff == false)
         {
-            gNut0(i) = problem->rbfSplinesInit[i]->eval(tv0);
+            //for (label i = 0; i < nphiNut; i++)
+            //{
+            //    gNut0(i) = problem->rbfSplinesInit[i]->eval(tv);
+            //}
+            gNut0 = nut0;
+        }
+        else
+        {
+            for (label i = 0; i < nphiNut; i++)
+            {
+                gNut0(i) = nutCoeffsL2(i, counter2);
+            }
         }
 
+        //std::cout << "tv is " << tv << std::endl;
+        //std::cout << "gNut0 is " << gNut0 << std::endl;
         rbfCoeffMat(0, counter2) = time;
         rbfCoeffMat.block(1, counter2, nphiNut, 1) = gNut0;
         counter2++;
@@ -393,34 +506,6 @@ void ReducedUnsteadyNSTurb::solveOnlineSUP(Eigen::MatrixXd vel,
         // {
         //     newtonObjectSUP.gNut(i) = problem->rbfSplines[i]->eval(tv);
         // }
-        Eigen::VectorXd tv;
-
-        if (counter2 > 0)
-        {
-            Eigen::VectorXd tv1;
-            Eigen::VectorXd tv2;
-            tv1 = newtonObjectSUP.yOldOld.head(Nphi_u);
-            tv2 = y.head(Nphi_u);
-            tv.resize(2 * Nphi_u+muStar.size());
-            tv << muStar,tv1, tv2;
-
-            for (label i = 0; i < nphiNut; i++)
-            {
-                newtonObjectSUP.gNut(i) = problem->rbfSplines[i]->eval(tv);
-            }
-        }
-        else
-        {
-            tv.resize(Nphi_u+muStar.size());
-            tv.head(muStar.size()) = muStar;
-            tv.tail(Nphi_u) = y.head(Nphi_u);
-
-            for (label i = 0; i < nphiNut; i++)
-            {
-                newtonObjectSUP.gNut(i) = problem->rbfSplinesInit[i]->eval(tv);
-            }
-        }
-
         // std::cout << "first a is" << tv << std::endl;
         // std::cout << "first g(a) is" << newtonObjectSUP.gNut << std::endl;
         // if(counter2==3)
@@ -438,9 +523,131 @@ void ReducedUnsteadyNSTurb::solveOnlineSUP(Eigen::MatrixXd vel,
         // std::cout << "zStar is" << zStar << std::endl;
         // std::cout << "first g(z) is" << newtonObjectSUP.gNut << std::endl;
         // exit(0);
+        // if (counter2 == 1)
+        // {
+        //     Eigen::VectorXd tv;
+        //     tv.resize(muStar.size() + Nphi_u);
+        //     tv << muStar, y.head(Nphi_u);
+        //     for (label i = 0; i < nphiNut; i++)
+        //     {
+        //         newtonObjectSUP.gNut(i) = problem->rbfSplinesInit[i]->eval(tv);
+        //     }
+        //     std::cout << "g is " << newtonObjectSUP.gNut << std::endl;
+        // }
+        Eigen::VectorXd tv;
+        //Eigen::VectorXd aDer;
+        //aDer = (y.head(Nphi_u) - newtonObjectSUPAve.y_old.head(Nphi_u)) / dt;
+        Eigen::VectorXd tv1;
+        Eigen::VectorXd tv2;
+        Eigen::VectorXd tv3;
+        tv3.resize(1);
+        tv3(0, 0) = dt;
+        tv1 = y.head(Nphi_u);
+        //tv2 = aDer;
+        tv2 = newtonObjectSUP.yOldOld.head(Nphi_u);
+
+        if (counter2 > 1)
+        {
+            tv.resize(problem->velRBF.cols());
+
+            //tv.resize(2 * Nphi_u + muStar.size()+1);
+            //tv << muStar, tv1, tv2, tv3;
+            if (problem->velRBF.cols() == Nphi_u)
+            {
+                tv << tv1;
+            }
+            else if (problem->velRBF.cols() == Nphi_u + muStar.size())
+            {
+                tv << muStar, tv1;
+            }
+            else if (problem->velRBF.cols() == 2 * Nphi_u + muStar.size() + 1)
+            {
+                tv << muStar, tv3, tv2, tv1;
+            }
+            else if (problem->velRBF.cols() == 2 * Nphi_u + muStar.size())
+            {
+                tv << muStar, tv2, tv1;
+            }
+            else if (problem->velRBF.cols() == 2 * Nphi_u)
+            {
+                tv << tv2, tv1;
+            }
+
+            //if (counter2 == 5)
+            //{
+            //    exit(0);
+            //}
+
+            if (readViscCoeff == false)
+            {
+                for (label i = 0; i < nphiNut; i++)
+                {
+                    newtonObjectSUP.gNut(i) = problem->rbfSplinesInit[i]->eval(tv);
+                    //std::cout << "g(i) is " << newtonObjectSUPAve.gNut(i) << std::endl;
+                }
+            }
+            else
+            {
+                for (label i = 0; i < nphiNut; i++)
+                {
+                    newtonObjectSUP.gNut(i) = nutCoeffsL2(i, counter2);
+                }
+            }
+
+            //std::cout << "tv is " << tv << std::endl;
+            //std::cout << "g is " << newtonObjectSUPAve.gNut << std::endl;
+        }
+        else
+        {
+            // tv.resize(problem->velRBF.cols());
+            // if(problem->velRBF.cols()==Nphi_u)
+            // {
+            //     tv << tv1;
+            // }
+            // else if(problem->velRBF.cols()==Nphi_u+muStar.size())
+            // {
+            //     tv << muStar, tv1;
+            // }
+            // else if(problem->velRBF.cols()==2*Nphi_u+muStar.size()+1)
+            // {
+            //     tv << muStar,tv3,tv1, tv2;
+            // }
+            // else if(problem->velRBF.cols()==2*Nphi_u+muStar.size())
+            // {
+            //     tv << muStar, tv1, tv2;
+            // }
+
+            //tv.resize(Nphi_u + muStar.size());
+            //tv << muStar,y.head(Nphi_u);
+            if (readViscCoeff == false)
+            {
+                //for (label i = 0; i < nphiNut; i++)
+                //{
+                //    newtonObjectSUPAve.gNut(i) = problem->rbfSplinesInit[i]->eval(tv);
+                //    std::cout << "g(i) is " << newtonObjectSUPAve.gNut(i) << std::endl;
+                //}
+                newtonObjectSUP.gNut = nut0;
+            }
+            else
+            {
+                for (label i = 0; i < nphiNut; i++)
+                {
+                    newtonObjectSUP.gNut(i) = nutCoeffsL2(i, counter2);
+                }
+            }
+
+            //std::cout << "tv is " << tv << std::endl;
+            //std::cout << "g is " << newtonObjectSUPAve.gNut << std::endl;
+        }
+
         Eigen::VectorXd res(y);
         res.setZero();
         hnls.solve(y);
+        // std::cout << "newtonObjectSUP.yOldOld.head(Nphi_u) is " <<
+        // newtonObjectSUP.yOldOld.head(Nphi_u) << std::endl;
+        // std::cout << "newtonObjectSUP.y_old.head(Nphi_u) is " <<
+        // newtonObjectSUP.y_old.head(Nphi_u) << std::endl;
+        // std::cout << "y.head(Nphi_u) is " << y.head(Nphi_u) << std::endl;
 
         // Change initial condition for the lifting function
         if (problem->bcMethod == "lift")
@@ -496,9 +703,355 @@ void ReducedUnsteadyNSTurb::solveOnlineSUP(Eigen::MatrixXd vel,
 
     // Save the solution
     ITHACAstream::exportMatrix(online_solution, "red_coeff", "python",
-     "./ITHACAoutput/red_coeff");
+       "./ITHACAoutput/red_coeff");
     ITHACAstream::exportMatrix(online_solution, "red_coeff", "matlab",
-     "./ITHACAoutput/red_coeff");
+       "./ITHACAoutput/red_coeff");
+    count_online_solve += 1;
+}
+
+// * * * * * * * * * * * * * * * Solve Functions  * * * * * * * * * * * * * //
+void ReducedUnsteadyNSTurb::solveOnlineSUPAve(Eigen::MatrixXd vel,
+    label startSnap)
+{
+    M_Assert(exportEvery >= dt,
+     "The time step dt must be smaller than exportEvery.");
+    M_Assert(storeEvery >= dt,
+     "The time step dt must be smaller than storeEvery.");
+    M_Assert(ITHACAutilities::isInteger(storeEvery / dt) == true,
+     "The variable storeEvery must be an integer multiple of the time step dt.");
+    M_Assert(ITHACAutilities::isInteger(exportEvery / dt) == true,
+     "The variable exportEvery must be an integer multiple of the time step dt.");
+    M_Assert(ITHACAutilities::isInteger(exportEvery / storeEvery) == true,
+     "The variable exportEvery must be an integer multiple of the variable storeEvery.");
+    int numberOfStores = round(storeEvery / dt);
+
+    if (problem->bcMethod == "lift")
+    {
+        vel_now = setOnlineVelocity(vel);
+    }
+    else if (problem->bcMethod == "penalty")
+    {
+        vel_now = vel;
+    }
+
+    // Create and resize the solution vector
+    y.resize(Nphi_u + Nphi_p, 1);
+    y.setZero();
+    //y.head(Nphi_u) = ITHACAutilities::get_coeffs(Usnapshots[startSnap], Umodes);
+    //y.tail(Nphi_p) = ITHACAutilities::get_coeffs_ortho(Psnapshots[startSnap],
+    //   Pmodes);
+    y.head(Nphi_u) = initCond.col(0).head(Nphi_u);
+    y.tail(Nphi_p) = initCond.col(0).tail(Nphi_p);
+    int nextStore = 0;
+    int counter2 = 0;
+
+    // Change initial condition for the lifting function
+    if (problem->bcMethod == "lift")
+    {
+        for (label j = 0; j < N_BC; j++)
+        {
+            y(j) = vel_now(j, 0);
+        }
+    }
+
+    // Set some properties of the newton object
+    newtonObjectSUPAve.nu = nu;
+    newtonObjectSUPAve.y_old = y;
+    newtonObjectSUPAve.yOldOld = newtonObjectSUPAve.y_old;
+    newtonObjectSUPAve.dt = dt;
+    newtonObjectSUPAve.bc.resize(N_BC);
+    newtonObjectSUPAve.tauU = tauU;
+    newtonObjectSUPAve.gNutAve = gNutAve;
+
+    for (label j = 0; j < N_BC; j++)
+    {
+        newtonObjectSUPAve.bc(j) = vel_now(j, 0);
+    }
+
+    // Set number of online solutions
+    int Ntsteps = static_cast<int>((finalTime - tstart) / dt);
+    int onlineSize = static_cast<int>(Ntsteps / numberOfStores);
+    online_solution.resize(onlineSize);
+    rbfCoeffMat.resize(nphiNut + 1, onlineSize + 3);
+    // Set the initial time
+    time = tstart;
+    // Counting variable
+    int counter = 0;
+    // Create vector to store temporal solution and save initial condition as first solution
+    Eigen::MatrixXd tmp_sol(Nphi_u + Nphi_p + 1, 1);
+    tmp_sol(0) = time;
+    tmp_sol.col(0).tail(y.rows()) = y;
+
+    if ((time != 0) || (startFromZero == true))
+    {
+        online_solution[counter] = tmp_sol;
+        counter ++;
+    }
+
+    // Create nonlinear solver object
+    Eigen::HybridNonLinearSolver<newtonUnsteadyNSTurbSUPAve> hnls(
+        newtonObjectSUPAve);
+    // Set output colors for fancy output
+    Color::Modifier red(Color::FG_RED);
+    Color::Modifier green(Color::FG_GREEN);
+    Color::Modifier def(Color::FG_DEFAULT);
+
+    // This part up to the while loop is just to compute the eddy viscosity field at time = startTime if time is not equal to zero
+    if ((time != 0) || (startFromZero == true))
+    {
+        Info << "inside time 0" << endl;
+        Eigen::VectorXd gNut0;
+        gNut0.resize(nphiNut);
+        Eigen::VectorXd tv;
+        // Eigen::VectorXd tv1;
+        // Eigen::VectorXd tv2;
+        // Eigen::VectorXd tv3;
+        // Eigen::VectorXd aDer;
+        // aDer = (y.head(Nphi_u) - newtonObjectSUP.yOldOld.head(Nphi_u))/dt;
+        // tv3.resize(1);
+        // tv3(0,0) = dt;
+        // tv1 = y.head(Nphi_u);
+        // tv2 = aDer;
+        // tv.resize(2 * Nphi_u + muStar.size()+1);
+        // tv << muStar, tv1, tv2,tv3;
+        tv.resize(muStar.size() + Nphi_u);
+        tv << muStar, y.head(Nphi_u);
+
+        if (readViscCoeff == false)
+        {
+            //for (label i = 0; i < nphiNut; i++)
+            //{
+            //    gNut0(i) = problem->rbfSplinesInit[i]->eval(tv);
+            //}
+            gNut0 = nut0;
+        }
+        else
+        {
+            for (label i = 0; i < nphiNut; i++)
+            {
+                gNut0(i) = nutCoeffsL2(i, counter2);
+            }
+        }
+
+        //std::cout << "tv is " << tv << std::endl;
+        //std::cout << "gNut0 is " << gNut0 << std::endl;
+        rbfCoeffMat(0, counter2) = time;
+        rbfCoeffMat.block(1, counter2, nphiNut, 1) = gNut0;
+        counter2++;
+        nextStore += numberOfStores;
+    }
+
+    velCoeff2.resize(2 * nphiVel+muStar.size(), Ntsteps+3);
+
+    // Start the time loop
+    while (time < finalTime)
+    {
+        //Info << "inside first iteration" << endl;
+        time = time + dt;
+
+        // Eigen::VectorXd tv;
+        // Eigen::VectorXd aDer;
+        // aDer = (y.head(Nphi_u) - newtonObjectSUPAve.yOldOld.head(Nphi_u)) / dt;
+        // Eigen::VectorXd tv1;
+        // Eigen::VectorXd tv2;
+        // Eigen::VectorXd tv3;
+        // Eigen::VectorXd tv4;
+        // Eigen::VectorXd tv5;
+        // tv3.resize(1);
+        // tv3(0, 0) = dt;
+        // tv1 = y.head(Nphi_u);
+        // //tv2 = aDer;
+        // tv2 = newtonObjectSUPAve.yOldOld.head(Nphi_u);
+        // tv4 = y.head(nphiVel);
+        // tv5 = newtonObjectSUPAve.yOldOld.head(nphiVel);
+
+        // if (counter2 > 1)
+        // {
+        //     tv.resize(problem->velRBF.cols());
+
+        //     //tv.resize(2 * Nphi_u + muStar.size()+1);
+        //     //tv << muStar, tv1, tv2, tv3;
+        //     if (problem->velRBF.cols() == Nphi_u)
+        //     {
+        //         tv << tv1;
+        //     }
+        //     else if (problem->velRBF.cols() == Nphi_u + muStar.size())
+        //     {
+        //         tv << muStar, tv1;
+        //     }
+        //     else if (problem->velRBF.cols() == 2 * Nphi_u + muStar.size() + 1)
+        //     {
+        //         tv << muStar, tv3, tv2, tv1;
+        //         std::cerr << "d1" << std::endl;
+        //     }
+        //     else if (problem->velRBF.cols() == 2 * Nphi_u + muStar.size())
+        //     {
+        //         tv << muStar, tv2, tv1;
+        //         std::cerr << "d2" << std::endl;
+        //     }
+        //     else if (problem->velRBF.cols() == 2 * Nphi_u)
+        //     {
+        //         tv << tv1, aDer;
+        //         velCoeff2.col(counter2 - 2) = tv;
+        //         //std::cout << "tv is " <<  tv << std::endl;
+        //     }
+        //     else if (problem->velRBF.cols() == nphiVel)
+        //     {
+        //         tv << tv4;
+        //         //std::cout << "tv is " <<  tv << std::endl;
+        //     }
+        //     else if (problem->velRBF.cols() == 2 * nphiVel)
+        //     {
+        //         tv << tv4, aDer.head(nphiVel);
+        //         velCoeff2.col(counter2 - 2) = tv;
+        //         //std::cerr << "d3" << std::endl;
+        //         //std::cout << "tv is " <<  tv << std::endl;
+        //     }
+
+        //     // if (counter2 == 5)
+        //     // {
+        //     //    exit(0);
+        //     // }
+
+        //     if (readViscCoeff == false)
+        //     {
+        //         for (label i = 0; i < nphiNut; i++)
+        //         {
+        //             newtonObjectSUPAve.gNut(i) = problem->rbfSplines[i]->eval(tv);
+        //             //std::cout << "g(i) is " << newtonObjectSUPAve.gNut(i) << std::endl;
+        //         }
+        //     }
+        //     else
+        //     {
+        //         for (label i = 0; i < nphiNut; i++)
+        //         {
+        //             newtonObjectSUPAve.gNut(i) = nutCoeffsL2(i, counter2);
+        //         }
+        //     }
+
+        //     //std::cout << "tv is " << tv << std::endl;
+        //     //std::cout << "g is " << newtonObjectSUPAve.gNut << std::endl;
+        // }
+        // else
+        // {
+        //     if (readViscCoeff == false)
+        //     {
+        //         newtonObjectSUPAve.gNut = nut0;
+        //     }
+        //     else
+        //     {
+        //         for (label i = 0; i < nphiNut; i++)
+        //         {
+        //             newtonObjectSUPAve.gNut(i) = nutCoeffsL2(i, counter2);
+        //         }
+        //     }
+        // }
+
+        // std::cout << "newtonObjectSUPAve.yOldOld.head(Nphi_u) is " <<
+        // newtonObjectSUPAve.yOldOld.head(Nphi_u) << std::endl;
+        // std::cout << "newtonObjectSUPAve.y_old.head(Nphi_u) is " <<
+        // newtonObjectSUPAve.y_old.head(Nphi_u) << std::endl;
+        // std::cout << "y.head(Nphi_u) is " << y.head(Nphi_u) << std::endl;
+        Eigen::VectorXd res(y);
+        res.setZero();
+        hnls.solve(y);
+        newtonObjectSUPAve.operator()(y, res);
+
+        Eigen::VectorXd tv;
+        Eigen::VectorXd aDer;
+        aDer = (y.head(Nphi_u) - newtonObjectSUPAve.y_old.head(Nphi_u)) / dt;
+        Eigen::VectorXd tv1;
+        Eigen::VectorXd tv2;
+        Eigen::VectorXd tv3;
+        Eigen::VectorXd tv4;
+        Eigen::VectorXd tv5;
+        tv3.resize(1);
+        tv3(0, 0) = dt;
+        tv1 = y.head(Nphi_u);
+        //tv2 = aDer;
+        tv2 = newtonObjectSUPAve.y_old.head(Nphi_u);
+        tv4 = y.head(nphiVel);
+        tv5 = newtonObjectSUPAve.y_old.head(nphiVel);
+        tv.resize(problem->velRBF.cols());
+        
+
+        tv << muStar, tv4, aDer.head(nphiVel);
+
+        velCoeff2.col(counter2 - 1) = tv;
+
+        if (readViscCoeff == false)
+        {
+            for (label i = 0; i < nphiNut; i++)
+            {
+                newtonObjectSUPAve.gNut(i) = problem->rbfSplines[i]->eval(tv);
+            }
+        }
+        else
+        {
+            for (label i = 0; i < nphiNut; i++)
+            {
+                newtonObjectSUPAve.gNut(i) = nutCoeffsL2(i, counter2);
+            }
+        }
+
+        // Change initial condition for the lifting function
+        if (problem->bcMethod == "lift")
+        {
+            for (label j = 0; j < N_BC; j++)
+            {
+                y(j) = vel_now(j, 0);
+            }
+        }
+
+        newtonObjectSUPAve.yOldOld = newtonObjectSUPAve.y_old;
+        newtonObjectSUPAve.y_old = y;
+        std::cout << "################## Online solve N° " << count_online_solve <<
+        " ##################" << std::endl;
+        Info << "Time = " << time << endl;
+        std::cout << "Solving for the parameter: " << vel_now << std::endl;
+
+        if (res.norm() < 1e-5)
+        {
+            std::cout << green << "|F(x)| = " << res.norm() << " - Minimun reached in " <<
+            hnls.iter << " iterations " << def << std::endl << std::endl;
+        }
+        else
+        {
+            std::cout << red << "|F(x)| = " << res.norm() << " - Minimun reached in " <<
+            hnls.iter << " iterations " << def << std::endl << std::endl;
+        }
+
+        count_online_solve += 1;
+        tmp_sol(0) = time;
+        tmp_sol.col(0).tail(y.rows()) = y;
+
+        if (counter == nextStore)
+        {
+            if (counter2 >= online_solution.size())
+            {
+                online_solution.append(tmp_sol);
+            }
+            else
+            {
+                online_solution[counter2] = tmp_sol;
+            }
+
+            rbfCoeffMat(0, counter2) = time;
+            rbfCoeffMat.block(1, counter2, nphiNut, 1) = newtonObjectSUPAve.gNut;
+            nextStore += numberOfStores;
+            counter2 ++;
+        }
+
+        counter ++;
+    }
+
+    // Save the solution
+    ITHACAstream::exportMatrix(online_solution, "red_coeff", "python",
+       "./ITHACAoutput/red_coeff");
+    ITHACAstream::exportMatrix(online_solution, "red_coeff", "matlab",
+       "./ITHACAoutput/red_coeff");
+    ITHACAstream::exportMatrix(velCoeff2, "velCoeff2", "matlab",
+       "./ITHACAoutput/red_coeff");
     count_online_solve += 1;
 }
 
@@ -507,15 +1060,15 @@ void ReducedUnsteadyNSTurb::solveOnlinePPE(Eigen::MatrixXd vel,
     label startSnap)
 {
     M_Assert(exportEvery >= dt,
-       "The time step dt must be smaller than exportEvery.");
+     "The time step dt must be smaller than exportEvery.");
     M_Assert(storeEvery >= dt,
-       "The time step dt must be smaller than storeEvery.");
+     "The time step dt must be smaller than storeEvery.");
     M_Assert(ITHACAutilities::isInteger(storeEvery / dt) == true,
-       "The variable storeEvery must be an integer multiple of the time step dt.");
+     "The variable storeEvery must be an integer multiple of the time step dt.");
     M_Assert(ITHACAutilities::isInteger(exportEvery / dt) == true,
-       "The variable exportEvery must be an integer multiple of the time step dt.");
+     "The variable exportEvery must be an integer multiple of the time step dt.");
     M_Assert(ITHACAutilities::isInteger(exportEvery / storeEvery) == true,
-       "The variable exportEvery must be an integer multiple of the variable storeEvery.");
+     "The variable exportEvery must be an integer multiple of the variable storeEvery.");
     int numberOfStores = round(storeEvery / dt);
 
     if (problem->bcMethod == "lift")
@@ -603,7 +1156,7 @@ void ReducedUnsteadyNSTurb::solveOnlinePPE(Eigen::MatrixXd vel,
         counter2++;
         nextStore += numberOfStores;
     }
-    
+
     online_solution[counter] = tmp_sol;
     counter ++;
     counter2++;
@@ -679,9 +1232,9 @@ void ReducedUnsteadyNSTurb::solveOnlinePPE(Eigen::MatrixXd vel,
 
     // Save the solution
     ITHACAstream::exportMatrix(online_solution, "red_coeff", "python",
-     "./ITHACAoutput/red_coeff");
+       "./ITHACAoutput/red_coeff");
     ITHACAstream::exportMatrix(online_solution, "red_coeff", "matlab",
-     "./ITHACAoutput/red_coeff");
+       "./ITHACAoutput/red_coeff");
     count_online_solve += 1;
 }
 
@@ -782,7 +1335,7 @@ void ReducedUnsteadyNSTurb::reconstructSUP(fileName folder)
 Eigen::MatrixXd ReducedUnsteadyNSTurb::setOnlineVelocity(Eigen::MatrixXd vel)
 {
     assert(problem->inletIndex.rows() == vel.rows()
-     && "Imposed boundary conditions dimensions do not match given values matrix dimensions");
+       && "Imposed boundary conditions dimensions do not match given values matrix dimensions");
     Eigen::MatrixXd vel_scal;
     vel_scal.resize(vel.rows(), vel.cols());
 
@@ -792,7 +1345,7 @@ Eigen::MatrixXd ReducedUnsteadyNSTurb::setOnlineVelocity(Eigen::MatrixXd vel)
         label l = problem->inletIndex(k, 1);
         scalar area = gSum(problem->liftfield[0].mesh().magSf().boundaryField()[p]);
         scalar u_lf = gSum(problem->liftfield[k].mesh().magSf().boundaryField()[p] *
-         problem->liftfield[k].boundaryField()[p]).component(l) / area;
+           problem->liftfield[k].boundaryField()[p]).component(l) / area;
         vel_scal(k, 0) = vel(k, 0) / u_lf;
     }
 

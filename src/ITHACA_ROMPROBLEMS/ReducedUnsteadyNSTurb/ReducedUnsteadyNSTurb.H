@@ -113,6 +113,40 @@ struct newtonUnsteadyNSTurbPPE: public newton_argument<double>
         std::vector<SPLINTER::RBFSpline*> SPLINES;
 };
 
+struct newtonUnsteadyNSTurbSUPAve: public newton_argument<double>
+{
+    public:
+        newtonUnsteadyNSTurbSUPAve() {}
+        newtonUnsteadyNSTurbSUPAve(int Nx, int Ny,
+                                   UnsteadyNSTurb& problem): newton_argument<double>(Nx, Ny),
+            problem(&problem),
+            Nphi_u(problem.NUmodes + problem.liftfield.size() + problem.NSUPmodes),
+            nphiNut(problem.nNutModes),
+            Nphi_p(problem.NPmodes),
+            N_BC(problem.inletIndex.rows()),
+            gNut(problem.nNutModes),
+            gNutAve(problem.nutAve.size())
+        {}
+
+        int operator()(const Eigen::VectorXd& x, Eigen::VectorXd& fvec) const;
+        int df(const Eigen::VectorXd& x,  Eigen::MatrixXd& fjac) const;
+
+        UnsteadyNSTurb* problem;
+        int Nphi_u;
+        int nphiNut;
+        int Nphi_p;
+        int N_BC;
+        scalar nu;
+        scalar dt;
+        Eigen::VectorXd y_old;
+        Eigen::VectorXd yOldOld;
+        Eigen::VectorXd bc;
+        Eigen::MatrixXd tauU;
+        Eigen::VectorXd gNut;
+        Eigen::VectorXd gNutAve;
+        std::vector<SPLINTER::RBFSpline*> SPLINES;
+};
+
 
 
 /*---------------------------------------------------------------------------*\
@@ -144,6 +178,9 @@ class ReducedUnsteadyNSTurb: public reducedUnsteadyNS
         /// Number of viscosity modes
         int nphiNut;
 
+        /// Number of pure velocity modes
+        int nphiVel;
+
         /// List of pointers to store the modes for the eddy viscosity
         PtrList<volScalarField> nutModes;
 
@@ -156,17 +193,39 @@ class ReducedUnsteadyNSTurb: public reducedUnsteadyNS
         /// The matrix of the eddy viscosity RBF interoplated coefficients
         Eigen::MatrixXd rbfCoeffMat;
 
-        /// The matrix of the eddy viscosity RBF interoplated coefficients
+        /// The matrix of the initial velocity and pressure projection coefficients
         Eigen::MatrixXd initCond;
+
+        /// The initial eddy viscosity projection coefficients
+        Eigen::VectorXd nut0;
 
         /// Function object to call the non linear solver sup approach
         newtonUnsteadyNSTurbSUP newtonObjectSUP;
+
+        /// Function object to call the non linear solver sup approach
+        newtonUnsteadyNSTurbSUPAve newtonObjectSUPAve;
 
         /// Function object to call the non linear solver PPE approach
         newtonUnsteadyNSTurbPPE newtonObjectPPE;
 
         /// Online parameter value
         Eigen::VectorXd muStar;
+
+        /// Matrix of reduced velocity coefficients used for the RBF interpolation
+        Eigen::MatrixXd velCoeff2;
+
+
+        /// To use viscosity coefficient from matrix or interpolating them
+        bool readViscCoeff = false;
+
+        ///
+        bool startFromZero = false;
+
+        /// The matrix of the eddy viscosity coefficients in case of readViscCoeff is true
+        Eigen::MatrixXd nutCoeffsL2;
+
+        /// The reduced average vector for viscosity coefficients
+        Eigen::VectorXd gNutAve;
 
 
         // Functions
@@ -191,6 +250,9 @@ class ReducedUnsteadyNSTurb: public reducedUnsteadyNS
         /// and used to get the reduced initial condition.
         ///
         void solveOnlineSUP(Eigen::MatrixXd velNow, label startSnap = 0);
+
+        void solveOnlineSUPAve(Eigen::MatrixXd velNow, label startSnap = 0);
+
 
         /// Method to reconstruct a solution from an online solve with a PPE stabilisation technique.
         /// stabilisation method
