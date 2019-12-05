@@ -214,12 +214,30 @@ class ReducedUnsteadyNSTurb: public reducedUnsteadyNS
         /// Matrix of reduced velocity coefficients used for the RBF interpolation
         Eigen::MatrixXd velCoeff2;
 
+        /// Matrix of reduced velocity coefficients used for the RBF interpolation after normalization
+        Eigen::MatrixXd velCoeff2Normalization;
+
 
         /// To use viscosity coefficient from matrix or interpolating them
         bool readViscCoeff = false;
 
         ///
         bool startFromZero = false;
+
+        ///
+        bool rbfNormalization = false;
+
+        /// Online parameter value
+        Eigen::MatrixXd minNormalizationVel;
+
+        /// Online parameter value
+        Eigen::MatrixXd maxNormalizationVel;
+
+        /// Online parameter value
+        Eigen::MatrixXd minNormalizationVisc;
+
+        /// Online parameter value
+        Eigen::MatrixXd maxNormalizationVisc;
 
         /// The matrix of the eddy viscosity coefficients in case of readViscCoeff is true
         Eigen::MatrixXd nutCoeffsL2;

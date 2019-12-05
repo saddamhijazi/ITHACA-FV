@@ -841,14 +841,14 @@ void ReducedUnsteadyNSTurb::solveOnlineSUPAve(Eigen::MatrixXd vel,
         nextStore += numberOfStores;
     }
 
-    velCoeff2.resize(2 * nphiVel+muStar.size(), Ntsteps+3);
+    velCoeff2.resize(2 * nphiVel + muStar.size(), Ntsteps + 1);
+    velCoeff2Normalization.resize(2 * nphiVel + muStar.size(), Ntsteps + 1);
 
     // Start the time loop
     while (time < finalTime)
     {
         //Info << "inside first iteration" << endl;
         time = time + dt;
-
         // Eigen::VectorXd tv;
         // Eigen::VectorXd aDer;
         // aDer = (y.head(Nphi_u) - newtonObjectSUPAve.yOldOld.head(Nphi_u)) / dt;
@@ -864,11 +864,9 @@ void ReducedUnsteadyNSTurb::solveOnlineSUPAve(Eigen::MatrixXd vel,
         // tv2 = newtonObjectSUPAve.yOldOld.head(Nphi_u);
         // tv4 = y.head(nphiVel);
         // tv5 = newtonObjectSUPAve.yOldOld.head(nphiVel);
-
         // if (counter2 > 1)
         // {
         //     tv.resize(problem->velRBF.cols());
-
         //     //tv.resize(2 * Nphi_u + muStar.size()+1);
         //     //tv << muStar, tv1, tv2, tv3;
         //     if (problem->velRBF.cols() == Nphi_u)
@@ -907,12 +905,10 @@ void ReducedUnsteadyNSTurb::solveOnlineSUPAve(Eigen::MatrixXd vel,
         //         //std::cerr << "d3" << std::endl;
         //         //std::cout << "tv is " <<  tv << std::endl;
         //     }
-
         //     // if (counter2 == 5)
         //     // {
         //     //    exit(0);
         //     // }
-
         //     if (readViscCoeff == false)
         //     {
         //         for (label i = 0; i < nphiNut; i++)
@@ -928,7 +924,6 @@ void ReducedUnsteadyNSTurb::solveOnlineSUPAve(Eigen::MatrixXd vel,
         //             newtonObjectSUPAve.gNut(i) = nutCoeffsL2(i, counter2);
         //         }
         //     }
-
         //     //std::cout << "tv is " << tv << std::endl;
         //     //std::cout << "g is " << newtonObjectSUPAve.gNut << std::endl;
         // }
@@ -946,7 +941,6 @@ void ReducedUnsteadyNSTurb::solveOnlineSUPAve(Eigen::MatrixXd vel,
         //         }
         //     }
         // }
-
         // std::cout << "newtonObjectSUPAve.yOldOld.head(Nphi_u) is " <<
         // newtonObjectSUPAve.yOldOld.head(Nphi_u) << std::endl;
         // std::cout << "newtonObjectSUPAve.y_old.head(Nphi_u) is " <<
@@ -956,7 +950,6 @@ void ReducedUnsteadyNSTurb::solveOnlineSUPAve(Eigen::MatrixXd vel,
         res.setZero();
         hnls.solve(y);
         newtonObjectSUPAve.operator()(y, res);
-
         Eigen::VectorXd tv;
         Eigen::VectorXd aDer;
         aDer = (y.head(Nphi_u) - newtonObjectSUPAve.y_old.head(Nphi_u)) / dt;
@@ -973,17 +966,41 @@ void ReducedUnsteadyNSTurb::solveOnlineSUPAve(Eigen::MatrixXd vel,
         tv4 = y.head(nphiVel);
         tv5 = newtonObjectSUPAve.y_old.head(nphiVel);
         tv.resize(problem->velRBF.cols());
-        
-
         tv << muStar, tv4, aDer.head(nphiVel);
-
         velCoeff2.col(counter2 - 1) = tv;
-
+        Eigen::MatrixXd rbfNormalized;
+        Eigen::VectorXd tvNormalized;
+        Eigen::MatrixXd temp;
+        rbfNormalized.resize(1, nphiNut);
+        if (rbfNormalization == true)
+        {
+            tvNormalized = EigenFunctions::columnWiseNormalization(tv,
+               maxNormalizationVel, minNormalizationVel);
+        }
         if (readViscCoeff == false)
         {
             for (label i = 0; i < nphiNut; i++)
             {
-                newtonObjectSUPAve.gNut(i) = problem->rbfSplines[i]->eval(tv);
+                if (rbfNormalization == false)
+                {
+                    newtonObjectSUPAve.gNut(i) = problem->rbfSplines[i]->eval(tv);
+                }
+                else
+                {
+                    rbfNormalized(0, i) = problem->rbfSplines[i]->eval(tvNormalized);
+                }
+            }
+
+            if (rbfNormalization == true)
+            {
+                velCoeff2Normalization.col(counter2 - 1) = tvNormalized;
+                temp = EigenFunctions::columnWiseRecovery(rbfNormalized,
+                  maxNormalizationVel, minNormalizationVisc);
+                std::cout << "rbfNormalized is " << rbfNormalized << std::endl;
+                std::cout << "temp is " << temp << std::endl;
+
+                newtonObjectSUPAve.gNut = temp.row(0);
+                exit(0);
             }
         }
         else
@@ -1051,6 +1068,8 @@ void ReducedUnsteadyNSTurb::solveOnlineSUPAve(Eigen::MatrixXd vel,
     ITHACAstream::exportMatrix(online_solution, "red_coeff", "matlab",
        "./ITHACAoutput/red_coeff");
     ITHACAstream::exportMatrix(velCoeff2, "velCoeff2", "matlab",
+       "./ITHACAoutput/red_coeff");
+    ITHACAstream::exportMatrix(velCoeff2Normalization, "velCoeff2Normalization", "matlab",
        "./ITHACAoutput/red_coeff");
     count_online_solve += 1;
 }

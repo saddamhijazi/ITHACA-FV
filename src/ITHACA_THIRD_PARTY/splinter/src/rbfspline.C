@@ -15,82 +15,83 @@
 namespace SPLINTER
 {
 
-    RBFSpline::RBFSpline(const DataTable& samples, RadialBasisFunctionType type, double e)
+RBFSpline::RBFSpline(const DataTable& samples, RadialBasisFunctionType type,
+                     double e)
     : RBFSpline(samples, type, false)
+{
+}
+
+RBFSpline::RBFSpline(const DataTable& samples, RadialBasisFunctionType type,
+                     DenseMatrix w, double e)
+    : samples(samples),
+      normalized(false),
+      precondition(false),
+      dim(samples.getNumVariables()),
+      numSamples(samples.getNumSamples())
+{
+    if (type == RadialBasisFunctionType::THIN_PLATE_SPLINE)
     {
+        fn = std::shared_ptr<RadialBasisFunction>(new ThinPlateSpline());
+        fn->e = e;
+    }
+    else if (type == RadialBasisFunctionType::MULTIQUADRIC)
+    {
+        fn = std::shared_ptr<RadialBasisFunction>(new Multiquadric());
+    }
+    else if (type == RadialBasisFunctionType::INVERSE_QUADRIC)
+    {
+        fn = std::shared_ptr<RadialBasisFunction>(new InverseQuadric());
+    }
+    else if (type == RadialBasisFunctionType::INVERSE_MULTIQUADRIC)
+    {
+        fn = std::shared_ptr<RadialBasisFunction>(new InverseMultiquadric());
+    }
+    else if (type == RadialBasisFunctionType::GAUSSIAN)
+    {
+        fn = std::shared_ptr<RadialBasisFunction>(new Gaussian());
+        fn->e = e;
+    }
+    else
+    {
+        fn = std::shared_ptr<RadialBasisFunction>(new ThinPlateSpline());
     }
 
-    RBFSpline::RBFSpline(const DataTable& samples, RadialBasisFunctionType type,
-       DenseMatrix w, double e)
-    : samples(samples),
-    normalized(false),
-    precondition(false),
-    dim(samples.getNumVariables()),
-    numSamples(samples.getNumSamples())
-    {
-        if (type == RadialBasisFunctionType::THIN_PLATE_SPLINE)
-        {
-            fn = std::shared_ptr<RadialBasisFunction>(new ThinPlateSpline());
-            fn->e = e;
-        }
-        else if (type == RadialBasisFunctionType::MULTIQUADRIC)
-        {
-            fn = std::shared_ptr<RadialBasisFunction>(new Multiquadric());
-        }
-        else if (type == RadialBasisFunctionType::INVERSE_QUADRIC)
-        {
-            fn = std::shared_ptr<RadialBasisFunction>(new InverseQuadric());
-        }
-        else if (type == RadialBasisFunctionType::INVERSE_MULTIQUADRIC)
-        {
-            fn = std::shared_ptr<RadialBasisFunction>(new InverseMultiquadric());
-        }
-        else if (type == RadialBasisFunctionType::GAUSSIAN)
-        {
-            fn = std::shared_ptr<RadialBasisFunction>(new Gaussian());
-            fn->e = e;
-        }
-        else
-        {
-            fn = std::shared_ptr<RadialBasisFunction>(new ThinPlateSpline());
-        }
+    weights = w;
+}
 
-        weights = w;
+RBFSpline::RBFSpline(const DataTable& samples, RadialBasisFunctionType type,
+                     bool normalized, double e)
+    : samples(samples),
+      normalized(normalized),
+      precondition(false),
+      dim(samples.getNumVariables()),
+      numSamples(samples.getNumSamples())
+{
+    if (type == RadialBasisFunctionType::THIN_PLATE_SPLINE)
+    {
+        fn = std::shared_ptr<RadialBasisFunction>(new ThinPlateSpline());
     }
-
-    RBFSpline::RBFSpline(const DataTable& samples, RadialBasisFunctionType type,
-       bool normalized, double e)
-    : samples(samples),
-    normalized(normalized),
-    precondition(false),
-    dim(samples.getNumVariables()),
-    numSamples(samples.getNumSamples())
+    else if (type == RadialBasisFunctionType::MULTIQUADRIC)
     {
-        if (type == RadialBasisFunctionType::THIN_PLATE_SPLINE)
-        {
-            fn = std::shared_ptr<RadialBasisFunction>(new ThinPlateSpline());
-        }
-        else if (type == RadialBasisFunctionType::MULTIQUADRIC)
-        {
-            fn = std::shared_ptr<RadialBasisFunction>(new Multiquadric());
-        }
-        else if (type == RadialBasisFunctionType::INVERSE_QUADRIC)
-        {
-            fn = std::shared_ptr<RadialBasisFunction>(new InverseQuadric());
-        }
-        else if (type == RadialBasisFunctionType::INVERSE_MULTIQUADRIC)
-        {
-            fn = std::shared_ptr<RadialBasisFunction>(new InverseMultiquadric());
-        }
-        else if (type == RadialBasisFunctionType::GAUSSIAN)
-        {
-            fn = std::shared_ptr<RadialBasisFunction>(new Gaussian());
-            fn->e = e;
-        }
-        else
-        {
-            fn = std::shared_ptr<RadialBasisFunction>(new ThinPlateSpline());
-        }
+        fn = std::shared_ptr<RadialBasisFunction>(new Multiquadric());
+    }
+    else if (type == RadialBasisFunctionType::INVERSE_QUADRIC)
+    {
+        fn = std::shared_ptr<RadialBasisFunction>(new InverseQuadric());
+    }
+    else if (type == RadialBasisFunctionType::INVERSE_MULTIQUADRIC)
+    {
+        fn = std::shared_ptr<RadialBasisFunction>(new InverseMultiquadric());
+    }
+    else if (type == RadialBasisFunctionType::GAUSSIAN)
+    {
+        fn = std::shared_ptr<RadialBasisFunction>(new Gaussian());
+        fn->e = e;
+    }
+    else
+    {
+        fn = std::shared_ptr<RadialBasisFunction>(new ThinPlateSpline());
+    }
 
     /* Want to solve the linear system A*w = b,
      * where w is the vector of weights.
@@ -101,58 +102,57 @@ namespace SPLINTER
      */
     //SparseMatrix A(numSamples,numSamples);
     //A.reserve(numSamples*numSamples);
-        DenseMatrix A;
-        A.setZero(numSamples, numSamples);
-        DenseMatrix b;
-        b.setZero(numSamples, 1);
-        int i = 0;
+    DenseMatrix A;
+    A.setZero(numSamples, numSamples);
+    DenseMatrix b;
+    b.setZero(numSamples, 1);
+    int i = 0;
 
-        for (auto it1 = samples.cbegin(); it1 != samples.cend(); ++it1, ++i)
+    for (auto it1 = samples.cbegin(); it1 != samples.cend(); ++it1, ++i)
+    {
+        double sum = 0;
+        int j = 0;
+
+        for (auto it2 = samples.cbegin(); it2 != samples.cend(); ++it2, ++j)
         {
-            double sum = 0;
-            int j = 0;
+            double val = fn->eval(dist(*it1, *it2));
 
-            for (auto it2 = samples.cbegin(); it2 != samples.cend(); ++it2, ++j)
+            if (val != 0)
             {
-                double val = fn->eval(dist(*it1, *it2));
-
-                if (val != 0)
-                {
                 //A.insert(i,j) = val;
-                    A(i, j) = val;
-                    sum += val;
-                }
-            }
-
-            double y = it1->getY();
-
-            if (normalized)
-            {
-                b(i) = sum * y;
-            }
-            else
-            {
-                b(i) = y;
+                A(i, j) = val;
+                sum += val;
             }
         }
+
+        double y = it1->getY();
+
+        if (normalized)
+        {
+            b(i) = sum * y;
+        }
+        else
+        {
+            b(i) = y;
+        }
+    }
 
     //A.makeCompressed();
 
-        if (precondition)
-        {
+    if (precondition)
+    {
         // Calcualte precondition matrix P
-            DenseMatrix P = computePreconditionMatrix();
+        DenseMatrix P = computePreconditionMatrix();
         // Preconditioned A and b
-            DenseMatrix Ap = P * A;
-            DenseMatrix bp = P * b;
-            A = Ap;
-            b = bp;
-        }
+        DenseMatrix Ap = P * A;
+        DenseMatrix bp = P * b;
+        A = Ap;
+        b = bp;
+    }
 
 #ifndef NDEBUG
-        std::cout << "Computing RBF weights using dense solver." << std::endl;
-        std::cout << "The radius of the RBF is equal to " << e << std::endl;
-
+    std::cout << "Computing RBF weights using dense solver." << std::endl;
+    std::cout << "The radius of the RBF is equal to " << e << std::endl;
 #endif // NDEBUG
     // SVD analysis
     //         Eigen::JacobiSVD<DenseMatrix> svd(A, Eigen::ComputeThinU | Eigen::ComputeThinV);
@@ -168,46 +168,46 @@ namespace SPLINTER
     // #endif // NDEBUG
     //     // Solve for weights
     //         weights = svd.solve(b);
-        weights = A.colPivHouseholderQr().solve(b);
+    weights = A.colPivHouseholderQr().solve(b);
 #ifndef NDEBUG
     // Compute error. If it is used later on, move this statement above the NDEBUG
-        double err = (A * weights - b).norm() / b.norm();
-        std::cout << "Error: " << std::setprecision(10) << err << std::endl;
+    double err = (A * weights - b).norm() / b.norm();
+    std::cout << "Error: " << std::setprecision(10) << err << std::endl;
 #endif // NDEBUG
     //    // Alternative solver
     //    DenseQR s;
     //    bool success = s.solve(A,b,weights);
     //    assert(success);
     // NOTE: Tried using experimental GMRES solver in Eigen, but it did not work very well.
-    }
+}
 
-    double RBFSpline::eval(DenseVector x) const
+double RBFSpline::eval(DenseVector x) const
+{
+    std::vector<double> y;
+
+    for (int i = 0; i < x.rows(); i++)
     {
-        std::vector<double> y;
-
-        for (int i = 0; i < x.rows(); i++)
-        {
-            y.push_back(x(i));
-        }
-
-        return eval(y);
+        y.push_back(x(i));
     }
 
-    double RBFSpline::eval(std::vector<double> x) const
+    return eval(y);
+}
+
+double RBFSpline::eval(std::vector<double> x) const
+{
+    assert(x.size() == dim);
+    double fval, sum = 0, sumw = 0;
+    int i = 0;
+
+    for (auto it = samples.cbegin(); it != samples.cend(); ++it, ++i)
     {
-        assert(x.size() == dim);
-        double fval, sum = 0, sumw = 0;
-        int i = 0;
-
-        for (auto it = samples.cbegin(); it != samples.cend(); ++it, ++i)
-        {
-            fval = fn->eval(dist(x, it->getX()));
-            sumw += weights(i) * fval;
-            sum += fval;
-        }
-
-        return normalized ? sumw / sum : sumw;
+        fval = fn->eval(dist(x, it->getX()));
+        sumw += weights(i) * fval;
+        sum += fval;
     }
+
+    return normalized ? sumw / sum : sumw;
+}
 
 /*
  * TODO: test for errors
@@ -264,27 +264,27 @@ namespace SPLINTER
 /*
  * Calculate precondition matrix
  */
-    DenseMatrix RBFSpline::computePreconditionMatrix() const
-    {
-        DenseMatrix P;
-        P.setZero(numSamples, numSamples);
+DenseMatrix RBFSpline::computePreconditionMatrix() const
+{
+    DenseMatrix P;
+    P.setZero(numSamples, numSamples);
     // Calculate precondition matrix P based on
     // purely local approximate cardinal basis functions (ACBF)
-        int sigma = std::max(1.0,
+    int sigma = std::max(1.0,
                          std::floor(0.1 * numSamples)); // Local points to consider
-        int i = 0;
+    int i = 0;
 
-        for (auto it1 = samples.cbegin(); it1 != samples.cend(); ++it1, ++i)
-        {
-            Point p1(it1->getX());
+    for (auto it1 = samples.cbegin(); it1 != samples.cend(); ++it1, ++i)
+    {
+        Point p1(it1->getX());
         // Shift data using p1 as origin
-            std::vector<Point> shifted_points;
-            int j = 0;
+        std::vector<Point> shifted_points;
+        int j = 0;
 
-            for (auto it2 = samples.cbegin(); it2 != samples.cend(); ++it2, ++j)
-            {
-                Point p2(it2->getX());
-                Point p3(p2 - p1);
+        for (auto it2 = samples.cbegin(); it2 != samples.cend(); ++it2, ++j)
+        {
+            Point p2(it2->getX());
+            Point p3(p2 - p1);
             p3.setIndex(j); // store index with point
             shifted_points.push_back(p3);
         }

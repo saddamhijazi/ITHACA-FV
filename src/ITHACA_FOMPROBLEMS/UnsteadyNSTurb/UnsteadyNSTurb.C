@@ -735,7 +735,7 @@ void UnsteadyNSTurb::projectSUP(fileName folder, label NU, label NP, label NSUP,
             ITHACAstream::ReadDenseMatrix(weights, "./ITHACAoutput/weightsSUP/",
                                           weightName);
             rbfSplines[i] = new SPLINTER::RBFSpline(*samples[i],
-                                                    SPLINTER::RadialBasisFunctionType::GAUSSIAN, weights,e);
+                                                    SPLINTER::RadialBasisFunctionType::GAUSSIAN, weights, e);
             std::cout << "Constructing RadialBasisFunction for mode " << i + 1 << std::endl;
         }
         else
@@ -748,7 +748,7 @@ void UnsteadyNSTurb::projectSUP(fileName folder, label NU, label NP, label NSUP,
             }
 
             rbfSplines[i] = new SPLINTER::RBFSpline(*samples[i],
-                                                    SPLINTER::RadialBasisFunctionType::GAUSSIAN,false,e);
+                                                    SPLINTER::RadialBasisFunctionType::GAUSSIAN, false, e);
             ITHACAstream::SaveDenseMatrix(rbfSplines[i]->weights,
                                           "./ITHACAoutput/weightsSUP/", weightName);
             std::cout << "Constructing RadialBasisFunction for mode " << i + 1 << std::endl;
@@ -1252,7 +1252,7 @@ Eigen::MatrixXd UnsteadyNSTurb::rbfModifiedCoeffsZDerivative(Eigen::MatrixXd A,
     int timeSnapshotsPerSample = snapshotsNum / parsSamplesNum;
     int newColsNum = 2 * velCoeffsNum;
     int newRowsNum = snapshotsNum - parsSamplesNum;
-    newRBFCoeffs.resize(newRowsNum, newColsNum + z.cols()-1);
+    newRBFCoeffs.resize(newRowsNum, newColsNum + z.cols() - 1);
 
     for (label j = 0; j < parsSamplesNum; j++)
     {

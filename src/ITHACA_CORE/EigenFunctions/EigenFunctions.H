@@ -105,7 +105,99 @@ class EigenFunctions
         ///
         static void sortEigenvalues(Eigen::VectorXd& eigenvalues,
                                     Eigen::MatrixXd& eigenvectors);
+        //--------------------------------------------------------------------------
+        /// @brief      { function_description }
+        ///
+        /// @param[in]  matrix      The matrix
+        /// @param      rowWiseMax  The row wise maximum
+        /// @param      rowWiseMin  The row wise minimum
+        ///
+        /// @return     { description_of_the_return_value }
+        ///
+        template<typename T>
+        static Eigen::Matrix < T, -1, -1 > rowWiseNormalization(Eigen::Matrix < T, -1,
+                -1 > matrix, Eigen::Matrix < T, -1, -1 > & rowWiseMax
+                , Eigen::Matrix < T, -1, -1 > & rowWiseMin);
 
+        //--------------------------------------------------------------------------
+        /// @brief      { function_description }
+        ///
+        /// @param[in]  vector      The vector
+        /// @param      rowWiseMax  The row wise maximum
+        /// @param      rowWiseMin  The row wise minimum
+        ///
+        /// @tparam     T           { description }
+        ///
+        /// @return     { description_of_the_return_value }
+        ///
+        template<typename T>
+        static Eigen::Vector < T, -1 > rowWiseNormalization(Eigen::Vector < T, -1> vector, Eigen::Matrix < T, -1, -1 > rowWiseMax
+                , Eigen::Matrix < T, -1, -1 > rowWiseMin);
+        //--------------------------------------------------------------------------
+        /// @brief      { function_description }
+        ///
+        /// @param[in]  matrix      The matrix
+        /// @param      rowWiseMax  The row wise maximum
+        /// @param      rowWiseMin  The row wise minimum
+        ///
+        /// @tparam     T           { description }
+        ///
+        /// @return     { description_of_the_return_value }
+        ///
+        template<typename T>
+        static Eigen::Matrix < T, -1, -1 > columnWiseNormalization(Eigen::Matrix < T,
+                -1,
+                -1 > matrix, Eigen::Matrix < T, -1, -1 > & columnWiseMax
+                , Eigen::Matrix < T, -1, -1 > & columnWiseMin);
+
+        //--------------------------------------------------------------------------
+        /// @brief      { function_description }
+        ///
+        /// @param[in]  vector         The vector
+        /// @param      columnWiseMax  The column wise maximum
+        /// @param      columnWiseMin  The column wise minimum
+        ///
+        /// @tparam     T              { description }
+        ///
+        /// @return     { description_of_the_return_value }
+        ///
+        template<typename T>
+        static Eigen::Vector < T, -1 > columnWiseNormalization(Eigen::Vector < T,
+                -1 > vector, Eigen::Matrix < T, -1, -1 > columnWiseMax
+                , Eigen::Matrix < T, -1, -1 > columnWiseMin);
+
+        //--------------------------------------------------------------------------
+        /// @brief      { function_description }
+        ///
+        /// @param[in]  normalized  The normalized
+        /// @param      rowWiseMax  The row wise maximum
+        /// @param      rowWiseMin  The row wise minimum
+        ///
+        /// @tparam     T           { description }
+        ///
+        /// @return     { description_of_the_return_value }
+        ///
+        template<typename T>
+        static Eigen::Matrix < T, -1, -1 > rowWiseRecovery(Eigen::Matrix < T, -1,
+                -1 > normalized, Eigen::Matrix < T, -1, -1 > rowWiseMax
+                , Eigen::Matrix < T, -1, -1 >  rowWiseMin);
+
+
+        //--------------------------------------------------------------------------
+        /// @brief      { function_description }
+        ///
+        /// @param[in]  normalized     The normalized
+        /// @param      columnWiseMax  The column wise maximum
+        /// @param      columnWiseMin  The column wise minimum
+        ///
+        /// @tparam     T              { description }
+        ///
+        /// @return     { description_of_the_return_value }
+        ///
+        template<typename T>
+        static Eigen::Matrix < T, -1, -1 > columnWiseRecovery(Eigen::Matrix < T, -1,
+                -1 > normalized, Eigen::Matrix < T, -1, -1 > columnWiseMax
+                , Eigen::Matrix < T, -1, -1 >  columnWiseMin);
         //--------------------------------------------------------------------------
         /// @brief      Perform Frobenius inner Product between two list of sparse matrices A and B
         ///

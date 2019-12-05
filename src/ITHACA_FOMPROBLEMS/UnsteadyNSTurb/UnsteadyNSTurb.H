@@ -141,7 +141,7 @@ class UnsteadyNSTurb: public unsteadyNS
         Eigen::VectorXd nutCoeff;
 
         /// RBF functions radius
-        double e=1;
+        double e = 1;
 
         /// Number of viscoisty modes used for the projection
         label nNutModes;
