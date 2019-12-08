@@ -102,18 +102,26 @@ int main(int argc, char *argv[])
         	int status3 = system(NUTcommand);
             //word tau_command = "cp tau_penalty_mat"+name(modesToRun(k,0))+".txt tau_penalty_mat.txt";
             //int status33 = system(tau_command);
+            for(label ii=1; ii<argc; ii++)
+            {
+                std::string app = argv[ii];
+                int status4 = system(app);
+            }
 
-        	int status4 = system(app);
-            //int status5 = system("compute_error");
-            //word U_command = "cp ./ITHACAoutput/postProcessing/errorUSUP_mat.m ./ITHACAoutput/postProcessing/errorUSUP_mat"
-            //+name(modesToRun(k,0)) + ".m";
-            //word p_command = "cp ./ITHACAoutput/postProcessing/errorPSUP_mat.m ./ITHACAoutput/postProcessing/errorPSUP_mat"
-            //+name(modesToRun(k,0)) + ".m";
+            word U_command = "cp ./ITHACAoutput/postProcessing/errorU_mat.m ./ITHACAoutput/postProcessing/errorU_mat"
+            + name(modesToRun(k,0)) + "_" + name(modesToRun(k,1)) + "_" + name(modesToRun(k,2)) + "_" 
+            + name(modesToRun(k,3)) + ".m";
+            word p_command = "cp ./ITHACAoutput/postProcessing/errorP_mat.m ./ITHACAoutput/postProcessing/errorP_mat"
+            + name(modesToRun(k,0)) + "_" + name(modesToRun(k,1)) + "_" + name(modesToRun(k,2)) + "_" 
+            + name(modesToRun(k,3)) + ".m";
+            word nut_command = "cp ./ITHACAoutput/postProcessing/errorNut_mat.m ./ITHACAoutput/postProcessing/errorNut_mat"
+            + name(modesToRun(k,0)) + "_" + name(modesToRun(k,1)) + "_" + name(modesToRun(k,2)) + "_" 
+            + name(modesToRun(k,3)) + ".m";
             //word bc_online = "cp ./ITHACAoutput/Reconstruction/bc_online_mat.m ./ITHACAoutput/Reconstruction/bc_online_mat"
             //+name(modesToRun(k,0)) + ".m";
-            //int status6 = system(U_command);
-            //int status7 = system(p_command);
-            //int status8 = system(bc_online);
+            int status5 = system(U_command);
+            int status6 = system(p_command);
+            int status7 = system(nut_command);
 
             word folderCommand1 = "cp -r ./ITHACAoutput/LiftandDragMatrices/ ./ITHACAoutput/LiftandDragMatrices"
             + name(modesToRun(k,0)) + "_" + name(modesToRun(k,1)) + "_" + name(modesToRun(k,2)) + "_" 
@@ -121,8 +129,7 @@ int main(int argc, char *argv[])
             // word folderCommand2 = "cp -r ./ITHACAoutput/LiftandDragMatricesLam/ ./ITHACAoutput/LiftandDragMatricesLam"
             // + name(modesToRun(k,0)) + "_" + name(modesToRun(k,1)) + "_" + name(modesToRun(k,2)) + "_" 
             // + name(modesToRun(k,3));
-            int status5 = system(folderCommand1);
-            // int status6 = system(folderCommand2);
+            int status8 = system(folderCommand1);
         }
         return 0;
     }

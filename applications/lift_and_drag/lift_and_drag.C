@@ -72,92 +72,109 @@ int main(int argc, char *argv[])
 #include "createTime.H"
 #include "createMesh.H"
 
-    Info << argv[0] << endl;
+	Info << argv[0] << endl;
 
-    instantList Times = runTime.times();
+	instantList Times = runTime.times();
 
-    runTime.setTime(Times[2], 2);
+	runTime.setTime(Times[2], 2);
 
     //Read FORCESdict
-    IOdictionary FORCESdict
-    (
-        IOobject
-        (
-            "FORCESdict",
-            runTime.system(),
-            mesh,
-            IOobject::MUST_READ,
-            IOobject::NO_WRITE
-        )
-    );
+	IOdictionary FORCESdict
+	(
+		IOobject
+		(
+			"FORCESdict",
+			runTime.system(),
+			mesh,
+			IOobject::MUST_READ,
+			IOobject::NO_WRITE
+			)
+		);
 
-    IOdictionary transportProperties
-    (
-        IOobject
-        (
-            "transportProperties",
-            runTime.constant(),
-            mesh,
-            IOobject::MUST_READ,
-            IOobject::NO_WRITE
-        )
-    );
+	IOdictionary transportProperties
+	(
+		IOobject
+		(
+			"transportProperties",
+			runTime.constant(),
+			mesh,
+			IOobject::MUST_READ,
+			IOobject::NO_WRITE
+			)
+		);
 
-    word pName(FORCESdict.lookup("pName"));
-    word UName(FORCESdict.lookup("UName"));
+	word pName(FORCESdict.lookup("pName"));
+	word UName(FORCESdict.lookup("UName"));
 
-    dictionary forcesDict; 
-    forcesDict.add("type", functionObjects::forces::typeName);
-    forcesDict.add("patches", FORCESdict.lookup("patches"));
-    forcesDict.add("origin", FORCESdict.lookup("pitchAxis"));
-    forcesDict.add("pitchAxis", FORCESdict.lookup("pitchAxis"));
-    forcesDict.add("CofR", FORCESdict.lookup("CofR"));
-    forcesDict.add("liftDir", FORCESdict.lookup("liftDir"));
-    forcesDict.add("dragDir", FORCESdict.lookup("dragDir"));
-    forcesDict.add("magUInf", FORCESdict.lookup("magUInf"));
-    forcesDict.add("lRef", FORCESdict.lookup("lRef"));
-    forcesDict.add("Aref", FORCESdict.lookup("Aref"));
-    forcesDict.add("rhoInf", FORCESdict.lookup("rhoInf"));
-    forcesDict.add("rho", FORCESdict.lookup("rho"));
+	dictionary forcesDict;
+	forcesDict.add("pName", FORCESdict.lookup("pName"));
+	forcesDict.add("UName", FORCESdict.lookup("UName"));
+	forcesDict.add("type", functionObjects::forces::typeName);
+	forcesDict.add("patches", FORCESdict.lookup("patches"));
+	forcesDict.add("origin", FORCESdict.lookup("pitchAxis"));
+	forcesDict.add("pitchAxis", FORCESdict.lookup("pitchAxis"));
+	forcesDict.add("CofR", FORCESdict.lookup("CofR"));
+	forcesDict.add("liftDir", FORCESdict.lookup("liftDir"));
+	forcesDict.add("dragDir", FORCESdict.lookup("dragDir"));
+	forcesDict.add("magUInf", FORCESdict.lookup("magUInf"));
+	forcesDict.add("lRef", FORCESdict.lookup("lRef"));
+	forcesDict.add("Aref", FORCESdict.lookup("Aref"));
+	forcesDict.add("rhoInf", FORCESdict.lookup("rhoInf"));
+	forcesDict.add("rho", FORCESdict.lookup("rho"));
 
-    functionObjects::forceCoeffs fc("FC", runTime, forcesDict);
-    functionObjects::forces f("Forces", mesh, forcesDict);
+	functionObjects::forceCoeffs fc("FC", runTime, forcesDict);
+	functionObjects::forces f("Forces", mesh, forcesDict);
 
-    for (label i = 2; i < Times.size(); i++)
-    {
-        runTime.setTime(Times[i], i);
-        mesh.readUpdate();
+	Info << "UName is " << UName << endl;
+	Info << "pName is " << pName << endl;
 
-        volVectorField U
-        (
-            IOobject
-            (
-                UName,
-                runTime.timeName(),
-                mesh,
-                IOobject::MUST_READ
-            ),
-            mesh
-        );
+	for (label i = 2; i < Times.size(); i++)
+	{
 
-        volScalarField P
-        (
-            IOobject
-            (
-                pName,
-                runTime.timeName(),
-                mesh,
-                IOobject::MUST_READ
-            ),
-            mesh
-        );
+		runTime.setTime(Times[i], i);
+		mesh.readUpdate();
 
-        fc.execute();
-        fc.write();
-        f.write();
-    }
-    Info << endl;
-    Info << "End\n" << endl;
-    return 0;
+		volVectorField U_aux
+		(
+			IOobject
+			(
+				UName,
+				runTime.timeName(),
+				mesh,
+				IOobject::MUST_READ
+				),
+			mesh
+			);
+
+		word U_name('U');
+		//word U_name = "U";
+
+		volVectorField U(U_name,U_aux);
+		Info << "U name is " << U.name() << endl;
+
+
+		volScalarField P_aux
+		(
+			IOobject
+			(
+				pName,
+				runTime.timeName(),
+				mesh,
+				IOobject::MUST_READ
+				),
+			mesh
+			);
+		word P_name('p');
+		//word P_name = "p";
+		volScalarField P(P_name,P_aux);
+
+
+		fc.execute();
+		fc.write();
+		f.write();
+	}
+	Info << endl;
+	Info << "End\n" << endl;
+	return 0;
 }
 

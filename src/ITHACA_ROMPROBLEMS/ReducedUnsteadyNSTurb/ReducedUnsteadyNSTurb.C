@@ -91,8 +91,8 @@ ReducedUnsteadyNSTurb::ReducedUnsteadyNSTurb(UnsteadyNSTurb& fomProblem)
     newtonObjectPPE = newtonUnsteadyNSTurbPPE(Nphi_u + Nphi_p, Nphi_u + Nphi_p,
       fomProblem);
     newtonObjectSUPAve = newtonUnsteadyNSTurbSUPAve(Nphi_u + Nphi_p,
-     Nphi_u + Nphi_p,
-     fomProblem);
+       Nphi_u + Nphi_p,
+       fomProblem);
 }
 
 
@@ -116,7 +116,7 @@ int newtonUnsteadyNSTurbSUP::operator()(const Eigen::VectorXd& x,
     else
     {
         a_dot = (1.5 * x.head(Nphi_u) - 2 * y_old.head(Nphi_u) + 0.5 * yOldOld.head(
-         Nphi_u)) / dt;
+           Nphi_u)) / dt;
     }
 
     // Convective term
@@ -199,7 +199,7 @@ int newtonUnsteadyNSTurbSUPAve::operator()(const Eigen::VectorXd& x,
     else
     {
         a_dot = (1.5 * x.head(Nphi_u) - 2 * y_old.head(Nphi_u) + 0.5 * yOldOld.head(
-         Nphi_u)) / dt;
+           Nphi_u)) / dt;
     }
 
     // Convective term
@@ -259,7 +259,7 @@ int newtonUnsteadyNSTurbSUPAve::operator()(const Eigen::VectorXd& x,
 
 // Operator to evaluate the Jacobian for the supremizer approach
 int newtonUnsteadyNSTurbSUPAve::df(const Eigen::VectorXd& x,
-   Eigen::MatrixXd& fjac) const
+ Eigen::MatrixXd& fjac) const
 {
     Eigen::NumericalDiff<newtonUnsteadyNSTurbSUPAve> numDiff(*this);
     numDiff.df(x, fjac);
@@ -285,7 +285,7 @@ int newtonUnsteadyNSTurbPPE::operator()(const Eigen::VectorXd& x,
     else
     {
         a_dot = (1.5 * x.head(Nphi_u) - 2 * y_old.head(Nphi_u) + 0.5 * yOldOld.head(
-         Nphi_u)) / dt;
+           Nphi_u)) / dt;
     }
 
     // Convective terms
@@ -368,15 +368,15 @@ void ReducedUnsteadyNSTurb::solveOnlineSUP(Eigen::MatrixXd vel,
     label startSnap)
 {
     M_Assert(exportEvery >= dt,
-     "The time step dt must be smaller than exportEvery.");
+       "The time step dt must be smaller than exportEvery.");
     M_Assert(storeEvery >= dt,
-     "The time step dt must be smaller than storeEvery.");
+       "The time step dt must be smaller than storeEvery.");
     M_Assert(ITHACAutilities::isInteger(storeEvery / dt) == true,
-     "The variable storeEvery must be an integer multiple of the time step dt.");
+       "The variable storeEvery must be an integer multiple of the time step dt.");
     M_Assert(ITHACAutilities::isInteger(exportEvery / dt) == true,
-     "The variable exportEvery must be an integer multiple of the time step dt.");
+       "The variable exportEvery must be an integer multiple of the time step dt.");
     M_Assert(ITHACAutilities::isInteger(exportEvery / storeEvery) == true,
-     "The variable exportEvery must be an integer multiple of the variable storeEvery.");
+       "The variable exportEvery must be an integer multiple of the variable storeEvery.");
     int numberOfStores = round(storeEvery / dt);
 
     if (problem->bcMethod == "lift")
@@ -703,9 +703,9 @@ void ReducedUnsteadyNSTurb::solveOnlineSUP(Eigen::MatrixXd vel,
 
     // Save the solution
     ITHACAstream::exportMatrix(online_solution, "red_coeff", "python",
-       "./ITHACAoutput/red_coeff");
+     "./ITHACAoutput/red_coeff");
     ITHACAstream::exportMatrix(online_solution, "red_coeff", "matlab",
-       "./ITHACAoutput/red_coeff");
+     "./ITHACAoutput/red_coeff");
     count_online_solve += 1;
 }
 
@@ -714,15 +714,15 @@ void ReducedUnsteadyNSTurb::solveOnlineSUPAve(Eigen::MatrixXd vel,
     label startSnap)
 {
     M_Assert(exportEvery >= dt,
-     "The time step dt must be smaller than exportEvery.");
+       "The time step dt must be smaller than exportEvery.");
     M_Assert(storeEvery >= dt,
-     "The time step dt must be smaller than storeEvery.");
+       "The time step dt must be smaller than storeEvery.");
     M_Assert(ITHACAutilities::isInteger(storeEvery / dt) == true,
-     "The variable storeEvery must be an integer multiple of the time step dt.");
+       "The variable storeEvery must be an integer multiple of the time step dt.");
     M_Assert(ITHACAutilities::isInteger(exportEvery / dt) == true,
-     "The variable exportEvery must be an integer multiple of the time step dt.");
+       "The variable exportEvery must be an integer multiple of the time step dt.");
     M_Assert(ITHACAutilities::isInteger(exportEvery / storeEvery) == true,
-     "The variable exportEvery must be an integer multiple of the variable storeEvery.");
+       "The variable exportEvery must be an integer multiple of the variable storeEvery.");
     int numberOfStores = round(storeEvery / dt);
 
     if (problem->bcMethod == "lift")
@@ -975,7 +975,7 @@ void ReducedUnsteadyNSTurb::solveOnlineSUPAve(Eigen::MatrixXd vel,
         if (rbfNormalization == true)
         {
             tvNormalized = EigenFunctions::columnWiseNormalization(tv,
-               maxNormalizationVel, minNormalizationVel);
+             maxNormalizationVel, minNormalizationVel);
         }
         if (readViscCoeff == false)
         {
@@ -1064,13 +1064,13 @@ void ReducedUnsteadyNSTurb::solveOnlineSUPAve(Eigen::MatrixXd vel,
 
     // Save the solution
     ITHACAstream::exportMatrix(online_solution, "red_coeff", "python",
-       "./ITHACAoutput/red_coeff");
+     "./ITHACAoutput/red_coeff");
     ITHACAstream::exportMatrix(online_solution, "red_coeff", "matlab",
-       "./ITHACAoutput/red_coeff");
+     "./ITHACAoutput/red_coeff");
     ITHACAstream::exportMatrix(velCoeff2, "velCoeff2", "matlab",
-       "./ITHACAoutput/red_coeff");
+     "./ITHACAoutput/red_coeff");
     ITHACAstream::exportMatrix(velCoeff2Normalization, "velCoeff2Normalization", "matlab",
-       "./ITHACAoutput/red_coeff");
+     "./ITHACAoutput/red_coeff");
     count_online_solve += 1;
 }
 
@@ -1079,15 +1079,15 @@ void ReducedUnsteadyNSTurb::solveOnlinePPE(Eigen::MatrixXd vel,
     label startSnap)
 {
     M_Assert(exportEvery >= dt,
-     "The time step dt must be smaller than exportEvery.");
+       "The time step dt must be smaller than exportEvery.");
     M_Assert(storeEvery >= dt,
-     "The time step dt must be smaller than storeEvery.");
+       "The time step dt must be smaller than storeEvery.");
     M_Assert(ITHACAutilities::isInteger(storeEvery / dt) == true,
-     "The variable storeEvery must be an integer multiple of the time step dt.");
+       "The variable storeEvery must be an integer multiple of the time step dt.");
     M_Assert(ITHACAutilities::isInteger(exportEvery / dt) == true,
-     "The variable exportEvery must be an integer multiple of the time step dt.");
+       "The variable exportEvery must be an integer multiple of the time step dt.");
     M_Assert(ITHACAutilities::isInteger(exportEvery / storeEvery) == true,
-     "The variable exportEvery must be an integer multiple of the variable storeEvery.");
+       "The variable exportEvery must be an integer multiple of the variable storeEvery.");
     int numberOfStores = round(storeEvery / dt);
 
     if (problem->bcMethod == "lift")
@@ -1251,9 +1251,9 @@ void ReducedUnsteadyNSTurb::solveOnlinePPE(Eigen::MatrixXd vel,
 
     // Save the solution
     ITHACAstream::exportMatrix(online_solution, "red_coeff", "python",
-       "./ITHACAoutput/red_coeff");
+     "./ITHACAoutput/red_coeff");
     ITHACAstream::exportMatrix(online_solution, "red_coeff", "matlab",
-       "./ITHACAoutput/red_coeff");
+     "./ITHACAoutput/red_coeff");
     count_online_solve += 1;
 }
 
@@ -1313,6 +1313,12 @@ void ReducedUnsteadyNSTurb::reconstructSUP(fileName folder)
     int counter2 = 1;
     int exportEveryIndex = round(exportEvery / storeEvery);
 
+    volScalarField nutAveNow("nutAveNow", nutModes[0] * 0);
+    for (label k = 0; k < problem->nutAve.size(); k++)
+    {
+        nutAveNow += gNutAve(k) * problem->nutAve[k];
+    }
+
     for (label i = 0; i < online_solution.size(); i++)
     {
         if (counter == nextWrite)
@@ -1338,6 +1344,7 @@ void ReducedUnsteadyNSTurb::reconstructSUP(fileName folder)
             {
                 nutRec += nutModes[j] * rbfCoeffMat(j + 1, i);
             }
+            nutRec+=nutAveNow;
 
             ITHACAstream::exportSolution(pRec, name(counter2), folder);
             ITHACAstream::exportSolution(nutRec, name(counter2), folder);
@@ -1354,7 +1361,7 @@ void ReducedUnsteadyNSTurb::reconstructSUP(fileName folder)
 Eigen::MatrixXd ReducedUnsteadyNSTurb::setOnlineVelocity(Eigen::MatrixXd vel)
 {
     assert(problem->inletIndex.rows() == vel.rows()
-       && "Imposed boundary conditions dimensions do not match given values matrix dimensions");
+     && "Imposed boundary conditions dimensions do not match given values matrix dimensions");
     Eigen::MatrixXd vel_scal;
     vel_scal.resize(vel.rows(), vel.cols());
 
@@ -1364,7 +1371,7 @@ Eigen::MatrixXd ReducedUnsteadyNSTurb::setOnlineVelocity(Eigen::MatrixXd vel)
         label l = problem->inletIndex(k, 1);
         scalar area = gSum(problem->liftfield[0].mesh().magSf().boundaryField()[p]);
         scalar u_lf = gSum(problem->liftfield[k].mesh().magSf().boundaryField()[p] *
-           problem->liftfield[k].boundaryField()[p]).component(l) / area;
+         problem->liftfield[k].boundaryField()[p]).component(l) / area;
         vel_scal(k, 0) = vel(k, 0) / u_lf;
     }
 
