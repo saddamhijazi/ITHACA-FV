@@ -131,7 +131,8 @@ class EigenFunctions
         /// @return     { description_of_the_return_value }
         ///
         template<typename T>
-        static Eigen::Vector < T, -1 > rowWiseNormalization(Eigen::Vector < T, -1> vector, Eigen::Matrix < T, -1, -1 > rowWiseMax
+        static Eigen::Vector < T, -1 > rowWiseNormalization(Eigen::Vector < T,
+                -1 > vector, Eigen::Matrix < T, -1, -1 > rowWiseMax
                 , Eigen::Matrix < T, -1, -1 > rowWiseMin);
         //--------------------------------------------------------------------------
         /// @brief      { function_description }

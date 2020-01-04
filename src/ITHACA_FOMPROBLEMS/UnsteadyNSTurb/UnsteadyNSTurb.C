@@ -1304,3 +1304,23 @@ Eigen::MatrixXd UnsteadyNSTurb::rbfModifiedCoeffsDerivative(Eigen::MatrixXd A,
 
     return newRBFCoeffs;
 }
+
+Eigen::MatrixXd UnsteadyNSTurb::rbfModifiedCoeffsZDerivative(Eigen::MatrixXd A,
+        Eigen::VectorXd par, double timeSnap)
+{
+    Eigen::MatrixXd newRBFCoeffs;
+    int velCoeffsNum = A.cols();
+    int snapshotsNum = A.rows();
+    int parsSamplesNum = par.size();
+    int newColsNum = 2 * velCoeffsNum + parsSamplesNum;
+    int newRowsNum = snapshotsNum - 1;
+    newRBFCoeffs.resize(newRowsNum, newColsNum);
+    Eigen::MatrixXd b0 = A.topRows(A.rows() - 1);
+    Eigen::MatrixXd b1 = A.bottomRows(A.rows() - 1);
+    Eigen::MatrixXd bNew(b0.rows(), b0.cols() + b1.cols());
+    bNew << b1, ((b1 - b0) / (timeSnap));
+    newRBFCoeffs.leftCols(parsSamplesNum) = Eigen::MatrixXd::Ones(newRowsNum,
+                                            parsSamplesNum) * par;
+    newRBFCoeffs.rightCols(newColsNum - parsSamplesNum) = bNew;
+    return newRBFCoeffs;
+}

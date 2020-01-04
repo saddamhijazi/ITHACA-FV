@@ -62,6 +62,8 @@ Description
 #include <vector>
 #include <string>
 #include <stdio.h>
+#include "ITHACAforces.H"
+
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
 
@@ -130,7 +132,6 @@ int main(int argc, char *argv[])
 
 	for (label i = 2; i < Times.size(); i++)
 	{
-
 		runTime.setTime(Times[i], i);
 		mesh.readUpdate();
 
@@ -146,11 +147,10 @@ int main(int argc, char *argv[])
 			mesh
 			);
 
-		word U_name('U');
-		//word U_name = "U";
+		//const_cast<char&>('U');
+		//const char s = const_cast<char&>('U');
 
-		volVectorField U(U_name,U_aux);
-		Info << "U name is " << U.name() << endl;
+		U_aux.rename("U");
 
 
 		volScalarField P_aux
@@ -164,14 +164,17 @@ int main(int argc, char *argv[])
 				),
 			mesh
 			);
-		word P_name('p');
+		P_aux.rename("p");
+		
+
 		//word P_name = "p";
-		volScalarField P(P_name,P_aux);
 
 
 		fc.execute();
 		fc.write();
 		f.write();
+		//f.calcForcesMoment();
+		//f.write();
 	}
 	Info << endl;
 	Info << "End\n" << endl;

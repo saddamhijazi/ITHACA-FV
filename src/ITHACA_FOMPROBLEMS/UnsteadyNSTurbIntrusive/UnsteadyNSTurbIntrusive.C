@@ -407,6 +407,243 @@ void UnsteadyNSTurbIntrusive::project(fileName folder, label nModes)
     cTotalTensor = convTensor - ct1Tensor - ct2Tensor;
 }
 
+void UnsteadyNSTurbIntrusive::projectPPE(fileName folder, label nUModes,
+        label nPModes)
+{
+    NUmodes = nUModes;
+    NPmodes = nPModes;
+    L_U_SUPmodes.resize(0);
+
+    if (nUModes != 0)
+    {
+        for (label k = 0; k < nUModes; k++)
+        {
+            L_U_SUPmodes.append(Umodes[k]);
+        }
+    }
+
+    if (ITHACAutilities::check_folder("./ITHACAoutput/Matrices/"))
+    {
+        word bStr = "b_" + name(nUModes);
+
+        if (ITHACAutilities::check_file("./ITHACAoutput/Matrices/" + bStr))
+        {
+            ITHACAstream::ReadDenseMatrix(bMatrix, "./ITHACAoutput/Matrices/", bStr);
+        }
+        else
+        {
+            bMatrix = diffusiveTerm(nUModes);
+        }
+
+        word btStr = "bt_" + name(nUModes);
+
+        if (ITHACAutilities::check_file("./ITHACAoutput/Matrices/" + btStr))
+        {
+            ITHACAstream::ReadDenseMatrix(btMatrix, "./ITHACAoutput/Matrices/", btStr);
+        }
+        else
+        {
+            btMatrix = btTurbulence(nUModes);
+        }
+
+        word kStr = "k_" + name(nUModes) + "_" + name(nPModes);
+
+        if (ITHACAutilities::check_file("./ITHACAoutput/Matrices/" + kStr))
+        {
+            ITHACAstream::ReadDenseMatrix(kMatrix, "./ITHACAoutput/Matrices/", kStr);
+        }
+        else
+        {
+            kMatrix = pressureGradientTerm(nUModes, nPModes);
+        }
+
+        word D_str = "D_" + name(nPModes);
+
+        if (ITHACAutilities::check_file("./ITHACAoutput/Matrices/" + D_str))
+        {
+            ITHACAstream::ReadDenseMatrix(D_matrix, "./ITHACAoutput/Matrices/", D_str);
+        }
+        else
+        {
+            D_matrix = laplacianPressure(nPModes);
+        }
+
+        word bc1_str = "BC1_" + name(nUModes) + "_" + name(nPModes);
+
+        if (ITHACAutilities::check_file("./ITHACAoutput/Matrices/" + bc1_str))
+        {
+            ITHACAstream::ReadDenseMatrix(BC1_matrix, "./ITHACAoutput/Matrices/", bc1_str);
+        }
+        else
+        {
+            BC1_matrix = pressureBC1(nUModes, nPModes);
+        }
+
+        word bc2_str = "BC2_" + name(nUModes) + "_" + name(nPModes) + "_t";
+
+        if (ITHACAutilities::check_file("./ITHACAoutput/Matrices/" + bc2_str))
+        {
+            ITHACAstream::ReadDenseTensor(bc2Tensor, "./ITHACAoutput/Matrices/", bc2_str);
+        }
+        else
+        {
+            bc2Tensor = pressureBC2(nUModes, nPModes);
+        }
+
+        word bc3_str = "BC3_" + name(nUModes) + "_" + name(nPModes);
+
+        if (ITHACAutilities::check_file("./ITHACAoutput/Matrices/" + bc3_str))
+        {
+            ITHACAstream::ReadDenseMatrix(BC3_matrix, "./ITHACAoutput/Matrices/", bc3_str);
+        }
+        else
+        {
+            BC3_matrix = pressureBC3(nUModes, nPModes);
+        }
+
+        word cStr = "c_" + name(nUModes) + "_t";
+
+        if (ITHACAutilities::check_file("./ITHACAoutput/Matrices/" + cStr))
+        {
+            ITHACAstream::ReadDenseTensor(convTensor, "./ITHACAoutput/Matrices/", cStr);
+        }
+        else
+        {
+            convTensor = convectiveTerm(nUModes);
+        }
+
+        word ct1Str = "ct1_" + name(nUModes) + "_t";
+
+        if (ITHACAutilities::check_file("./ITHACAoutput/Matrices/" + ct1Str))
+        {
+            ITHACAstream::ReadDenseTensor(ct1Tensor, "./ITHACAoutput/Matrices/", ct1Str);
+        }
+        else
+        {
+            ct1Tensor = turbulenceTensor1(nUModes);
+        }
+
+        word ct2Str = "ct2_" + name(nUModes) + "_t";
+
+        if (ITHACAutilities::check_file("./ITHACAoutput/Matrices/" + ct2Str))
+        {
+            ITHACAstream::ReadDenseTensor(ct2Tensor, "./ITHACAoutput/Matrices/", ct2Str);
+        }
+        else
+        {
+            ct2Tensor = turbulenceTensor2(nUModes);
+        }
+
+        word G_str = "G_" + name(nUModes) + "_" + name(nPModes) + "_t";
+
+        if (ITHACAutilities::check_file("./ITHACAoutput/Matrices/" + G_str))
+        {
+            ITHACAstream::ReadDenseTensor(gTensor, "./ITHACAoutput/Matrices/", G_str);
+        }
+        else
+        {
+            gTensor = divMomentum(nUModes, nPModes);
+        }
+
+        if (bcMethod == "penalty")
+        {
+            bcVelVec = bcVelocityVec(nUModes);
+            bcVelMat = bcVelocityMat(nUModes);
+        }
+    }
+    else
+    {
+        bMatrix = diffusiveTerm(nUModes);
+        convTensor = convectiveTerm(nUModes);
+        kMatrix = pressureGradientTerm(nUModes, nPModes);
+        btMatrix = btTurbulence(nUModes);
+        ct1Tensor = turbulenceTensor1(nUModes);
+        ct2Tensor = turbulenceTensor2(nUModes);
+        D_matrix = laplacianPressure(nPModes);
+        gTensor = divMomentum(nUModes, nPModes);
+        BC1_matrix = pressureBC1(nUModes, nPModes);
+        bc2Tensor = pressureBC2(nUModes, nPModes);
+        BC3_matrix = pressureBC3(nUModes, nPModes);
+
+        if (bcMethod == "penalty")
+        {
+            bcVelVec = bcVelocityVec(nUModes);
+            bcVelMat = bcVelocityMat(nUModes);
+        }
+    }
+
+    // Export the matrices
+    if (para->exportPython)
+    {
+        ITHACAstream::exportMatrix(bMatrix, "b", "python", "./ITHACAoutput/Matrices/");
+        ITHACAstream::exportMatrix(kMatrix, "k", "python", "./ITHACAoutput/Matrices/");
+        ITHACAstream::exportMatrix(btMatrix, "bt", "python",
+                                   "./ITHACAoutput/Matrices/");
+        ITHACAstream::exportMatrix(D_matrix, "D", "python", "./ITHACAoutput/Matrices/");
+        ITHACAstream::exportMatrix(BC1_matrix, "BC1", "python",
+                                   "./ITHACAoutput/Matrices/");
+        ITHACAstream::exportMatrix(BC3_matrix, "BC3", "python",
+                                   "./ITHACAoutput/Matrices/");
+        ITHACAstream::exportTensor(gTensor, "G", "python", "./ITHACAoutput/Matrices/");
+        ITHACAstream::exportTensor(bc2Tensor, "BC2", "python",
+                                   "./ITHACAoutput/Matrices/");
+        ITHACAstream::exportTensor(convTensor, "c", "python",
+                                   "./ITHACAoutput/Matrices/");
+        ITHACAstream::exportTensor(ct1Tensor, "ct1", "python",
+                                   "./ITHACAoutput/Matrices/");
+        ITHACAstream::exportTensor(ct2Tensor, "ct2", "python",
+                                   "./ITHACAoutput/Matrices/");
+    }
+
+    if (para->exportMatlab)
+    {
+        ITHACAstream::exportMatrix(bMatrix, "b", "matlab", "./ITHACAoutput/Matrices/");
+        ITHACAstream::exportMatrix(kMatrix, "k", "matlab", "./ITHACAoutput/Matrices/");
+        ITHACAstream::exportMatrix(btMatrix, "bt", "matlab",
+                                   "./ITHACAoutput/Matrices/");
+        ITHACAstream::exportMatrix(D_matrix, "D", "matlab", "./ITHACAoutput/Matrices/");
+        ITHACAstream::exportMatrix(BC1_matrix, "BC1", "matlab",
+                                   "./ITHACAoutput/Matrices/");
+        ITHACAstream::exportMatrix(BC3_matrix, "BC3", "matlab",
+                                   "./ITHACAoutput/Matrices/");
+        ITHACAstream::exportTensor(gTensor, "G", "matlab", "./ITHACAoutput/Matrices/");
+        ITHACAstream::exportTensor(bc2Tensor, "BC2", "matlab",
+                                   "./ITHACAoutput/Matrices/");
+        ITHACAstream::exportTensor(convTensor, "c", "matlab",
+                                   "./ITHACAoutput/Matrices/");
+        ITHACAstream::exportTensor(ct1Tensor, "ct1", "matlab",
+                                   "./ITHACAoutput/Matrices/");
+        ITHACAstream::exportTensor(ct2Tensor, "ct2", "matlab",
+                                   "./ITHACAoutput/Matrices/");
+    }
+
+    if (para->exportTxt)
+    {
+        ITHACAstream::exportMatrix(bMatrix, "b", "eigen", "./ITHACAoutput/Matrices/");
+        ITHACAstream::exportMatrix(kMatrix, "k", "eigen", "./ITHACAoutput/Matrices/");
+        ITHACAstream::exportMatrix(btMatrix, "bt", "eigen", "./ITHACAoutput/Matrices/");
+        ITHACAstream::exportMatrix(D_matrix, "D", "eigen", "./ITHACAoutput/Matrices/");
+        ITHACAstream::exportMatrix(BC1_matrix, "BC1", "eigen",
+                                   "./ITHACAoutput/Matrices/");
+        ITHACAstream::exportMatrix(BC3_matrix, "BC3", "eigen",
+                                   "./ITHACAoutput/Matrices/");
+        ITHACAstream::exportTensor(gTensor, "G", "eigen",
+                                   "./ITHACAoutput/Matrices/G");
+        ITHACAstream::exportTensor(bc2Tensor, "BC2_", "eigen",
+                                   "./ITHACAoutput/Matrices/BC2");
+        ITHACAstream::exportTensor(convTensor, "c", "eigen",
+                                   "./ITHACAoutput/Matrices/c");
+        ITHACAstream::exportTensor(ct1Tensor, "ct1_", "eigen",
+                                   "./ITHACAoutput/Matrices/ct1");
+        ITHACAstream::exportTensor(ct2Tensor, "ct2_", "eigen",
+                                   "./ITHACAoutput/Matrices/ct2");
+    }
+
+    bTotalMatrix = bMatrix + btMatrix;
+    cTotalTensor.resize(nUModes, nUModes, nUModes);
+    cTotalTensor = convTensor - ct1Tensor - ct2Tensor;
+}
+
 Eigen::MatrixXd UnsteadyNSTurbIntrusive::diffusiveTerm(label nModes)
 {
     Eigen::MatrixXd bMatrix;
@@ -483,6 +720,238 @@ Eigen::MatrixXd UnsteadyNSTurbIntrusive::pressureGradientTerm(label nModes)
     ITHACAstream::SaveDenseMatrix(kMatrix, "./ITHACAoutput/Matrices/",
                                   "k_" + name(nModes));
     return kMatrix;
+}
+
+Eigen::MatrixXd UnsteadyNSTurbIntrusive::pressureGradientTerm(label nUModes,
+        label nPModes)
+{
+    Eigen::MatrixXd kMatrix(nUModes, nPModes);
+
+    // Project everything
+    for (label i = 0; i < nUModes; i++)
+    {
+        for (label j = 0; j < nPModes; j++)
+        {
+            kMatrix(i, j) = fvc::domainIntegrate(Umodes[i] & fvc::grad(
+                    Pmodes[j])).value();
+        }
+    }
+
+    if (Pstream::parRun())
+    {
+        reduce(kMatrix, sumOp<Eigen::MatrixXd>());
+    }
+
+    ITHACAstream::SaveDenseMatrix(kMatrix, "./ITHACAoutput/Matrices/",
+                                  "k_" + name(nUModes) + "_" + name(nPModes));
+    return kMatrix;
+}
+
+Eigen::MatrixXd UnsteadyNSTurbIntrusive::laplacianPressure(label nPModes)
+{
+    Eigen::MatrixXd dMatrix(nPModes, nPModes);
+
+    // Project everything
+    for (label i = 0; i < nPModes; i++)
+    {
+        for (label j = 0; j < nPModes; j++)
+        {
+            dMatrix(i, j) = fvc::domainIntegrate(fvc::grad(Pmodes[i])&fvc::grad(
+                    Pmodes[j])).value();
+        }
+    }
+
+    if (Pstream::parRun())
+    {
+        reduce(dMatrix, sumOp<Eigen::MatrixXd>());
+    }
+
+    ITHACAstream::SaveDenseMatrix(dMatrix, "./ITHACAoutput/Matrices/",
+                                  "D_" + name(nPModes));
+    return dMatrix;
+}
+
+Eigen::Tensor<double, 3> UnsteadyNSTurbIntrusive::divMomentum(label nUModes,
+        label nPModes)
+{
+    label g1Size = nPModes;
+    label g2Size = nUModes;
+    Eigen::Tensor<double, 3> gTensor;
+    gTensor.resize(g1Size, g2Size, g2Size);
+
+    for (label i = 0; i < g1Size; i++)
+    {
+        for (label j = 0; j < g2Size; j++)
+        {
+            for (label k = 0; k < g2Size; k++)
+            {
+                gTensor(i, j, k) = fvc::domainIntegrate(fvc::grad(Pmodes[i]) & (fvc::div(
+                        fvc::interpolate(Umodes[j]) & Umodes[j].mesh().Sf(),
+                        Umodes[k]))).value();
+            }
+        }
+    }
+
+    if (Pstream::parRun())
+    {
+        reduce(gTensor, sumOp<Eigen::Tensor<double, 3>>());
+    }
+
+    // Export the tensor
+    ITHACAstream::SaveDenseTensor(gTensor, "./ITHACAoutput/Matrices/",
+                                  "G_" + name(nUModes) + "_" + name(
+                                      nPModes) + "_t");
+    return gTensor;
+}
+
+Eigen::MatrixXd UnsteadyNSTurbIntrusive::pressureBC1(label nUModes,
+        label nPModes)
+{
+    label P_BC1size = nPModes;
+    label P_BC2size = nUModes;
+    Eigen::MatrixXd BC1_matrix(P_BC1size, P_BC2size);
+    fvMesh& mesh = _mesh();
+
+    for (label i = 0; i < P_BC1size; i++)
+    {
+        for (label j = 0; j < P_BC2size; j++)
+        {
+            surfaceScalarField lpl((fvc::interpolate(fvc::laplacian(
+                                        Umodes[j]))&mesh.Sf())*fvc::interpolate(Pmodes[i]));
+            double s = 0;
+
+            for (label k = 0; k < lpl.boundaryField().size(); k++)
+            {
+                s += gSum(lpl.boundaryField()[k]);
+            }
+
+            BC1_matrix(i, j) = s;
+        }
+    }
+
+    if (Pstream::parRun())
+    {
+        reduce(BC1_matrix, sumOp<Eigen::MatrixXd>());
+    }
+
+    ITHACAstream::SaveDenseMatrix(BC1_matrix, "./ITHACAoutput/Matrices/",
+                                  "BC1_" + name(nUModes) + "_" + name(nPModes));
+    return BC1_matrix;
+}
+
+Eigen::Tensor<double, 3 > UnsteadyNSTurbIntrusive::pressureBC2(label nUModes,
+        label nPModes)
+{
+    label pressureBC1Size = nPModes;
+    label pressureBC2Size = nUModes;
+    Eigen::Tensor<double, 3 > bc2Tensor;
+    fvMesh& mesh = _mesh();
+    bc2Tensor.resize(pressureBC1Size, pressureBC2Size, pressureBC2Size);
+
+    for (label i = 0; i < pressureBC1Size; i++)
+    {
+        for (label j = 0; j < pressureBC2Size; j++)
+        {
+            for (label k = 0; k < pressureBC2Size; k++)
+            {
+                surfaceScalarField div_m(fvc::interpolate(fvc::div(fvc::interpolate(
+                                             Umodes[j]) & mesh.Sf(),
+                                         Umodes[k]))&mesh.Sf()*fvc::interpolate(Pmodes[i]));
+                double s = 0;
+
+                for (label k = 0; k < div_m.boundaryField().size(); k++)
+                {
+                    s += gSum(div_m.boundaryField()[k]);
+                }
+
+                bc2Tensor(i, j, k) = s;
+            }
+        }
+    }
+
+    if (Pstream::parRun())
+    {
+        reduce(bc2Tensor, sumOp<Eigen::Tensor<double, 3>>());
+    }
+
+    // Export the tensor
+    ITHACAstream::SaveDenseTensor(bc2Tensor, "./ITHACAoutput/Matrices/",
+                                  "BC2_" + name(nUModes) + "_" + name(nPModes) + "_t");
+    return bc2Tensor;
+}
+
+Eigen::MatrixXd UnsteadyNSTurbIntrusive::pressureBC3(label nUModes,
+        label nPModes)
+{
+    label P3_BC1size = nPModes;
+    label P3_BC2size = nUModes;
+    Eigen::MatrixXd BC3_matrix(P3_BC1size, P3_BC2size);
+    fvMesh& mesh = _mesh();
+    surfaceVectorField n(mesh.Sf() / mesh.magSf());
+
+    for (label i = 0; i < P3_BC1size; i++)
+    {
+        for (label j = 0; j < P3_BC2size; j++)
+        {
+            surfaceVectorField BC3 = fvc::interpolate(fvc::curl(Umodes[j]));
+            surfaceVectorField BC4 = n ^ fvc::interpolate(fvc::grad(Pmodes[i]));
+            surfaceScalarField BC5 = (BC3 & BC4) * mesh.magSf();
+            double s = 0;
+
+            for (label k = 0; k < BC5.boundaryField().size(); k++)
+            {
+                s += gSum(BC5.boundaryField()[k]);
+            }
+
+            BC3_matrix(i, j) = s;
+        }
+    }
+
+    if (Pstream::parRun())
+    {
+        reduce(BC3_matrix, sumOp<Eigen::MatrixXd>());
+    }
+
+    ITHACAstream::SaveDenseMatrix(BC3_matrix, "./ITHACAoutput/Matrices/",
+                                  "BC3_" + name(nUModes) + "_" + name(nPModes));
+    return BC3_matrix;
+}
+
+Eigen::MatrixXd UnsteadyNSTurbIntrusive::pressureBC4(label nUModes,
+        label nPModes)
+{
+    label P4_BC1size = nPModes;
+    label P4_BC2size = nUModes;
+    Eigen::MatrixXd BC4_matrix(P4_BC1size, P4_BC2size);
+    fvMesh& mesh = _mesh();
+    surfaceVectorField n(mesh.Sf() / mesh.magSf());
+
+    for (label i = 0; i < P4_BC1size; i++)
+    {
+        for (label j = 0; j < P4_BC2size; j++)
+        {
+            surfaceScalarField BC3 = fvc::interpolate(Pmodes[i]);
+            surfaceScalarField BC4 = n & fvc::interpolate(Umodes[j]);
+            surfaceScalarField BC5 = (BC3 * BC4) * mesh.magSf();
+            double s = 0;
+
+            for (label k = 0; k < BC5.boundaryField().size(); k++)
+            {
+                s += gSum(BC5.boundaryField()[k]);
+            }
+
+            BC4_matrix(i, j) = s;
+        }
+    }
+
+    if (Pstream::parRun())
+    {
+        reduce(BC4_matrix, sumOp<Eigen::MatrixXd>());
+    }
+
+    ITHACAstream::SaveDenseMatrix(BC4_matrix, "./ITHACAoutput/Matrices/",
+                                  "BC4_" + name(nUModes) + "_" + name(nPModes));
+    return BC4_matrix;
 }
 
 List< Eigen::MatrixXd > UnsteadyNSTurbIntrusive::bcVelocityVec(label nModes)

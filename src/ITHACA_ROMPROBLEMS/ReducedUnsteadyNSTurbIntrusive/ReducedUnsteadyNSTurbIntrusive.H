@@ -72,6 +72,33 @@ struct newtonUnsteadyNSTurbIntrusive: public newton_argument<double>
         Eigen::MatrixXd tauU;
 };
 
+struct newtonUnsteadyNSTurbIntrusivePPE: public newton_argument<double>
+{
+    public:
+        newtonUnsteadyNSTurbIntrusivePPE() {}
+        newtonUnsteadyNSTurbIntrusivePPE(int Nx, int Ny,
+                                         UnsteadyNSTurbIntrusive& problem): newton_argument<double>(Nx, Ny),
+            problem(&problem),
+            Nphi_u(problem.NUmodes),
+            Nphi_p(problem.NPmodes),
+            N_BC(problem.inletIndex.rows())
+        {}
+
+        int operator()(const Eigen::VectorXd& x, Eigen::VectorXd& fvec) const;
+        int df(const Eigen::VectorXd& x,  Eigen::MatrixXd& fjac) const;
+
+        UnsteadyNSTurbIntrusive* problem;
+        int Nphi_u;
+        int Nphi_p;
+        int N_BC;
+        scalar nu;
+        scalar dt;
+        Eigen::VectorXd y_old;
+        Eigen::VectorXd yOldOld;
+        Eigen::VectorXd bc;
+        Eigen::MatrixXd tauU;
+};
+
 /*---------------------------------------------------------------------------*\
                         Class reducedProblem Declaration
 \*---------------------------------------------------------------------------*/
@@ -104,6 +131,9 @@ class ReducedUnsteadyNSTurbIntrusive: public reducedUnsteadyNS
         /// Function object to call the non linear solver sup approach
         newtonUnsteadyNSTurbIntrusive newtonObject;
 
+        /// Function object to call the non linear solver sup approach
+        newtonUnsteadyNSTurbIntrusivePPE newtonObjectPPE;
+
         ///
         Eigen::MatrixXd initCond;
 
@@ -121,12 +151,29 @@ class ReducedUnsteadyNSTurbIntrusive: public reducedUnsteadyNS
         ///
         void solveOnline(Eigen::MatrixXd velNow, label startSnap = 0);
 
+        ///
+        /// @brief      Method to perform an online solve using an intrusive approach
+        ///
+        /// @param[in]  velNow   The vector of online velocity. It is defined in
+        /// with an Eigen::MatrixXd and must have one col and as many rows as the number
+        /// of parametrized boundary conditions.
+        /// @param[in]  startSnap The first snapshot taken from the offline snahpshots
+        /// and used to get the reduced initial condition.
+        ///
+        void solveOnlinePPE(Eigen::MatrixXd vel, label startSnap);
         //--------------------------------------------------------------------------
-        /// Method to reconstruct the solutions from an online solve
+        /// @brief      Method to reconstruct the solutions from an online solve with same number of modes for all variables
         ///
         /// @param[in]  folder      The folder where to output the solutions
         ///
         void reconstruct(fileName folder = "./online_rec");
+
+        ///
+        /// @brief      Method to reconstruct the solutions from an online solve with number of modes different for pressure
+        ///
+        /// @param[in]  folder      The folder where to output the solutions
+        ///
+        void reconstructPPE(fileName folder);
 
         //--------------------------------------------------------------------------
         /// @brief      Sets the online velocity.
@@ -145,6 +192,14 @@ class ReducedUnsteadyNSTurbIntrusive: public reducedUnsteadyNS
         ///
         void reconstructLiftAndDrag(UnsteadyNSTurbIntrusive& problem,
                                     fileName folder);
+        //--------------------------------------------------------------------------
+        /// @brief      Method to compute the reduced order forces for different number of modes of velocity and pressure
+        ///
+        /// @param      problem  A UnsteadyNSTurbIntrusive full order problem.
+        /// @param[in]  folder   The folder where to output the forces matrices
+        ///
+        void reconstructLiftAndDragPPE(UnsteadyNSTurbIntrusive& problem,
+                                       fileName folder);
 };
 
 

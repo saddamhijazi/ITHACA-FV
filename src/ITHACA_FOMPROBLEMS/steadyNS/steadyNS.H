@@ -357,7 +357,7 @@ class steadyNS: public reductionProblem
         ///
         List < Eigen::MatrixXd > div_momentum(label NUmodes, label NPmodes);
 
-        ///
+        //--------------------------------------------------------------------------
         /// @brief      Divergence of convective term (PPE approach)
         ///
         /// @param[in]  NUmodes    The number of velocity modes.

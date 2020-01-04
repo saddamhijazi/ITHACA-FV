@@ -34,7 +34,7 @@ License
 
 // * * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * //
 void EigenFunctions::sortEigenvalues(Eigen::VectorXd& eigenvalues,
- Eigen::MatrixXd& eigenvectors)
+                                     Eigen::MatrixXd& eigenvectors)
 {
     labelList order;
     scalarField eigenValues(eigenvalues.size());
@@ -66,9 +66,9 @@ void EigenFunctions::sortEigenvalues(Eigen::VectorXd& eigenvalues,
 }
 
 template<typename T> Eigen::Matrix < T, -1,
--1 > EigenFunctions::rowWiseNormalization(Eigen::Matrix < T, -1,
- -1 > matrix, Eigen::Matrix < T, -1, -1 > & rowWiseMax
- , Eigen::Matrix < T, -1, -1 > & rowWiseMin)
+         -1 > EigenFunctions::rowWiseNormalization(Eigen::Matrix < T, -1,
+         -1 > matrix, Eigen::Matrix < T, -1, -1 > & rowWiseMax
+         , Eigen::Matrix < T, -1, -1 > & rowWiseMin)
 {
     Eigen::Matrix < T, -1, -1 > normalized;
     normalized = matrix;
@@ -82,7 +82,7 @@ template<typename T> Eigen::Matrix < T, -1,
         rowWiseMin(i, 0) = matrix.row(i).minCoeff();
         rowWiseMax(i, 0) = matrix.row(i).maxCoeff();
         normalized.row(i) = normalized.row(i) - rowWiseMin(i,
-            0) * temp;
+                            0) * temp;
         normalized.row(i) /= rowWiseMax(i, 0) - rowWiseMin(i, 0);
     }
 
@@ -90,9 +90,9 @@ template<typename T> Eigen::Matrix < T, -1,
 }
 
 template<typename T> Eigen::Matrix < T, -1,
--1 > EigenFunctions::columnWiseNormalization(Eigen::Matrix < T, -1,
- -1 > matrix, Eigen::Matrix < T, -1, -1 > & columnWiseMax
- , Eigen::Matrix < T, -1, -1 > & columnWiseMin)
+         -1 > EigenFunctions::columnWiseNormalization(Eigen::Matrix < T, -1,
+         -1 > matrix, Eigen::Matrix < T, -1, -1 > & columnWiseMax
+         , Eigen::Matrix < T, -1, -1 > & columnWiseMin)
 {
     Eigen::Matrix < T, -1, -1 > normalized;
     normalized = matrix;
@@ -113,10 +113,11 @@ template<typename T> Eigen::Matrix < T, -1,
 }
 
 template<typename T> Eigen::Vector < T,
--1 > EigenFunctions::columnWiseNormalization(Eigen::Vector < T, -1> vector, Eigen::Matrix < T, -1, -1 > columnWiseMax
- , Eigen::Matrix < T, -1, -1 > columnWiseMin)
+         -1 > EigenFunctions::columnWiseNormalization(Eigen::Vector < T, -1 > vector,
+         Eigen::Matrix < T, -1, -1 > columnWiseMax
+         , Eigen::Matrix < T, -1, -1 > columnWiseMin)
 {
-    Eigen::Vector < T, -1> normalized;
+    Eigen::Vector < T, -1 > normalized;
     normalized = vector;
 
     for (int i = 0; i < vector.size(); i++)
@@ -129,9 +130,9 @@ template<typename T> Eigen::Vector < T,
 }
 
 template<typename T> Eigen::Matrix < T, -1,
--1 > EigenFunctions::rowWiseRecovery(Eigen::Matrix < T, -1,
- -1 > normalized, Eigen::Matrix < T, -1, -1 > rowWiseMax
- , Eigen::Matrix < T, -1, -1 > rowWiseMin)
+         -1 > EigenFunctions::rowWiseRecovery(Eigen::Matrix < T, -1,
+         -1 > normalized, Eigen::Matrix < T, -1, -1 > rowWiseMax
+         , Eigen::Matrix < T, -1, -1 > rowWiseMin)
 {
     Eigen::Matrix < T, -1, -1 > recovery;
     recovery = normalized;
@@ -148,9 +149,9 @@ template<typename T> Eigen::Matrix < T, -1,
 }
 
 template<typename T> Eigen::Matrix < T, -1,
--1 > EigenFunctions::columnWiseRecovery(Eigen::Matrix < T, -1,
- -1 > normalized, Eigen::Matrix < T, -1, -1 > columnWiseMax
- , Eigen::Matrix < T, -1, -1 > columnWiseMin)
+         -1 > EigenFunctions::columnWiseRecovery(Eigen::Matrix < T, -1,
+         -1 > normalized, Eigen::Matrix < T, -1, -1 > columnWiseMax
+         , Eigen::Matrix < T, -1, -1 > columnWiseMin)
 {
     Eigen::Matrix < T, -1, -1 > recovery;
     recovery = normalized;
@@ -167,85 +168,88 @@ template<typename T> Eigen::Matrix < T, -1,
 }
 
 template Eigen::Matrix < double, -1,
--1 > EigenFunctions::rowWiseNormalization(Eigen::Matrix < double, -1,
-    -1 > matrix, Eigen::Matrix < double, -1,
+                         -1 > EigenFunctions::rowWiseNormalization(Eigen::Matrix < double, -1,
+-1 > matrix, Eigen::Matrix < double, -1,
     -1 > & rowWiseMax
     , Eigen::Matrix < double, -1,
     -1 > & rowWiseMin);
 
 template Eigen::Matrix < int, -1,
--1 > EigenFunctions::rowWiseNormalization(Eigen::Matrix < int, -1,
-    -1 > matrix, Eigen::Matrix < int, -1,
+                         -1 > EigenFunctions::rowWiseNormalization(Eigen::Matrix < int, -1,
+-1 > matrix, Eigen::Matrix < int, -1,
     -1 > & rowWiseMax
     , Eigen::Matrix < int, -1,
     -1 > & rowWiseMin);
 
 template Eigen::Matrix < float, -1,
--1 > EigenFunctions::rowWiseNormalization(Eigen::Matrix < float, -1,
-    -1 > matrix, Eigen::Matrix < float, -1,
+                         -1 > EigenFunctions::rowWiseNormalization(Eigen::Matrix < float, -1,
+-1 > matrix, Eigen::Matrix < float, -1,
     -1 > & rowWiseMax
     , Eigen::Matrix < float, -1,
     -1 > & rowWiseMin);
 
 template Eigen::Matrix < double, -1,
--1 > EigenFunctions::columnWiseNormalization(Eigen::Matrix < double, -1,
-    -1 > matrix, Eigen::Matrix < double, -1, -1 > & columnWiseMax
+                         -1 > EigenFunctions::columnWiseNormalization(Eigen::Matrix < double, -1,
+-1 > matrix, Eigen::Matrix < double, -1, -1 > & columnWiseMax
     , Eigen::Matrix < double, -1, -1 > & columnWiseMin);
 
 template Eigen::Matrix < int, -1,
--1 > EigenFunctions::columnWiseNormalization(Eigen::Matrix < int, -1,
-    -1 > matrix, Eigen::Matrix < int, -1, -1 > & columnWiseMax
+                         -1 > EigenFunctions::columnWiseNormalization(Eigen::Matrix < int, -1,
+-1 > matrix, Eigen::Matrix < int, -1, -1 > & columnWiseMax
     , Eigen::Matrix < int, -1, -1 > & columnWiseMin);
 
 template Eigen::Matrix < float, -1,
--1 > EigenFunctions::columnWiseNormalization(Eigen::Matrix < float, -1,
-    -1 > matrix, Eigen::Matrix < float, -1, -1 > & columnWiseMax
+                         -1 > EigenFunctions::columnWiseNormalization(Eigen::Matrix < float, -1,
+-1 > matrix, Eigen::Matrix < float, -1, -1 > & columnWiseMax
     , Eigen::Matrix < float, -1, -1 > & columnWiseMin);
 
 template Eigen::Matrix < double, -1,
--1 > EigenFunctions::rowWiseRecovery(Eigen::Matrix < double, -1,
-    -1 > normalized, Eigen::Matrix < double, -1,
+                         -1 > EigenFunctions::rowWiseRecovery(Eigen::Matrix < double, -1,
+-1 > normalized, Eigen::Matrix < double, -1,
     -1 > rowWiseMax
     , Eigen::Matrix < double, -1,
     -1 > rowWiseMin);
 
 template Eigen::Matrix < int, -1,
--1 > EigenFunctions::rowWiseRecovery(Eigen::Matrix < int, -1,
-    -1 > normalized, Eigen::Matrix < int, -1,
+                         -1 > EigenFunctions::rowWiseRecovery(Eigen::Matrix < int, -1,
+-1 > normalized, Eigen::Matrix < int, -1,
     -1 > rowWiseMax
     , Eigen::Matrix < int, -1,
     -1 > rowWiseMin);
 
 template Eigen::Matrix < float, -1,
--1 > EigenFunctions::rowWiseRecovery(Eigen::Matrix < float, -1,
-    -1 > normalized, Eigen::Matrix < float, -1,
+                         -1 > EigenFunctions::rowWiseRecovery(Eigen::Matrix < float, -1,
+-1 > normalized, Eigen::Matrix < float, -1,
     -1 > rowWiseMax
     , Eigen::Matrix < float, -1,
     -1 > rowWiseMin);
 
 template Eigen::Matrix < double, -1,
--1 > EigenFunctions::columnWiseRecovery(Eigen::Matrix < double, -1,
-    -1 > normalized, Eigen::Matrix < double, -1, -1 > columnWiseMax
+                         -1 > EigenFunctions::columnWiseRecovery(Eigen::Matrix < double, -1,
+-1 > normalized, Eigen::Matrix < double, -1, -1 > columnWiseMax
     , Eigen::Matrix < double, -1, -1 > columnWiseMin);
 
 template Eigen::Matrix < int, -1,
--1 > EigenFunctions::columnWiseRecovery(Eigen::Matrix < int, -1,
-    -1 > normalized, Eigen::Matrix < int, -1, -1 > columnWiseMax
+                         -1 > EigenFunctions::columnWiseRecovery(Eigen::Matrix < int, -1,
+-1 > normalized, Eigen::Matrix < int, -1, -1 > columnWiseMax
     , Eigen::Matrix < int, -1, -1 > columnWiseMin);
 
 template Eigen::Matrix < float, -1,
--1 > EigenFunctions::columnWiseRecovery(Eigen::Matrix < float, -1,
-    -1 > normalized, Eigen::Matrix < float, -1, -1 > columnWiseMax
+                         -1 > EigenFunctions::columnWiseRecovery(Eigen::Matrix < float, -1,
+-1 > normalized, Eigen::Matrix < float, -1, -1 > columnWiseMax
     , Eigen::Matrix < float, -1, -1 > columnWiseMin);
 
-template Eigen::Vector < double, -1> EigenFunctions::columnWiseNormalization(Eigen::Vector < double,
-    -1 > vector, Eigen::Matrix < double, -1, -1 > columnWiseMax
+template Eigen::Vector < double,
+                         -1 > EigenFunctions::columnWiseNormalization(Eigen::Vector < double,
+-1 > vector, Eigen::Matrix < double, -1, -1 > columnWiseMax
     , Eigen::Matrix < double, -1, -1 > columnWiseMin);
 
-template Eigen::Vector < int, -1> EigenFunctions::columnWiseNormalization(Eigen::Vector < int,
-    -1 > vector, Eigen::Matrix < int, -1, -1 > columnWiseMax
+template Eigen::Vector < int,
+                         -1 > EigenFunctions::columnWiseNormalization(Eigen::Vector < int,
+-1 > vector, Eigen::Matrix < int, -1, -1 > columnWiseMax
     , Eigen::Matrix < int, -1, -1 > columnWiseMin);
 
-template Eigen::Vector < float, -1> EigenFunctions::columnWiseNormalization(Eigen::Vector < float,
-    -1 > vector, Eigen::Matrix < float, -1, -1 > columnWiseMax
+template Eigen::Vector < float,
+                         -1 > EigenFunctions::columnWiseNormalization(Eigen::Vector < float,
+-1 > vector, Eigen::Matrix < float, -1, -1 > columnWiseMax
     , Eigen::Matrix < float, -1, -1 > columnWiseMin);

@@ -270,6 +270,9 @@ class UnsteadyNSTurb: public unsteadyNS
 
         Eigen::MatrixXd rbfModifiedCoeffsDerivative(Eigen::MatrixXd A,
                 Eigen::VectorXd initSnapInd, Eigen::VectorXd timeSnap);
+
+        Eigen::MatrixXd rbfModifiedCoeffsZDerivative(Eigen::MatrixXd A,
+                Eigen::VectorXd par, double timeSnap);
 };
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //

@@ -185,11 +185,13 @@ void ReducedSteadyNSTurbIntrusive::reconstruct(fileName folder,
         {
             volVectorField uRec("uRec", Umodes[0] * 0);
             volScalarField pRec("pRec", problem->Pmodes[0] * 0);
+            volScalarField nutTemp("nutTemp", problem->nutModes[0] * 0);
 
             for (label j = 0; j < Nphi_u; j++)
             {
                 uRec += Umodes[j] * online_solution[i](j + 1, 0);
                 pRec += problem->Pmodes[j] * online_solution[i](j + 1, 0);
+                nutTemp += problem->nutModes[j] * online_solution[i](j + 1, 0);
             }
 
             ITHACAstream::exportSolution(uRec, name(online_solution[i](0, 0)), folder);
@@ -197,6 +199,7 @@ void ReducedSteadyNSTurbIntrusive::reconstruct(fileName folder,
             nextWrite += printEvery;
             UREC.append(uRec);
             PREC.append(pRec);
+            nutRec.append(nutTemp);
         }
 
         counter++;

@@ -222,9 +222,6 @@ class ReducedUnsteadyNSTurb: public reducedUnsteadyNS
         bool readViscCoeff = false;
 
         ///
-        bool startFromZero = false;
-
-        ///
         bool rbfNormalization = false;
 
         /// Online parameter value
