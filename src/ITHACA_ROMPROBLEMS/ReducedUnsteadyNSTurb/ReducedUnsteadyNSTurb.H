@@ -147,6 +147,40 @@ struct newtonUnsteadyNSTurbSUPAve: public newton_argument<double>
         std::vector<SPLINTER::RBFSpline*> SPLINES;
 };
 
+struct newtonUnsteadyNSTurbPPEAve: public newton_argument<double>
+{
+    public:
+        newtonUnsteadyNSTurbPPEAve() {}
+        newtonUnsteadyNSTurbPPEAve(int Nx, int Ny,
+                                   UnsteadyNSTurb& problem): newton_argument<double>(Nx, Ny),
+            problem(&problem),
+            Nphi_u(problem.NUmodes + problem.liftfield.size()),
+            nphiNut(problem.nNutModes),
+            Nphi_p(problem.NPmodes),
+            N_BC(problem.inletIndex.rows()),
+            gNut(problem.nNutModes),
+            gNutAve(problem.nutAve.size())
+
+        {}
+
+        int operator()(const Eigen::VectorXd& x, Eigen::VectorXd& fvec) const;
+        int df(const Eigen::VectorXd& x,  Eigen::MatrixXd& fjac) const;
+
+        UnsteadyNSTurb* problem;
+        int Nphi_u;
+        int nphiNut;
+        int Nphi_p;
+        int N_BC;
+        scalar nu;
+        scalar dt;
+        Eigen::VectorXd y_old;
+        Eigen::VectorXd yOldOld;
+        Eigen::VectorXd bc;
+        Eigen::MatrixXd tauU;
+        Eigen::VectorXd gNut;
+        Eigen::VectorXd gNutAve;
+        std::vector<SPLINTER::RBFSpline*> SPLINES;
+};
 
 
 /*---------------------------------------------------------------------------*\
@@ -208,6 +242,9 @@ class ReducedUnsteadyNSTurb: public reducedUnsteadyNS
         /// Function object to call the non linear solver PPE approach
         newtonUnsteadyNSTurbPPE newtonObjectPPE;
 
+        /// Function object to call the non linear solver PPE approach
+        newtonUnsteadyNSTurbPPEAve newtonObjectPPEAve;
+
         /// Online parameter value
         Eigen::VectorXd muStar;
 
@@ -267,6 +304,9 @@ class ReducedUnsteadyNSTurb: public reducedUnsteadyNS
         void solveOnlineSUP(Eigen::MatrixXd velNow, label startSnap = 0);
 
         void solveOnlineSUPAve(Eigen::MatrixXd velNow, label startSnap = 0);
+
+        void solveOnlinePPEAve(Eigen::MatrixXd velNow, label startSnap = 0);
+
 
 
         /// Method to reconstruct a solution from an online solve with a PPE stabilisation technique.

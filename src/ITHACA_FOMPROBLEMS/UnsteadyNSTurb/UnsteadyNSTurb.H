@@ -112,15 +112,21 @@ class UnsteadyNSTurb: public unsteadyNS
         /// Turbulent viscosity tensor
         Eigen::Tensor<double, 3 > ct2Tensor;
         Eigen::Tensor<double, 3 > ct2AveTensor;
+        Eigen::Tensor<double, 3 > ct2PPETensor;
+        Eigen::Tensor<double, 3 > ct2PPEAveTensor;
 
 
         /// Turbulent viscosity tensor
         Eigen::Tensor<double, 3 > ct1Tensor;
         Eigen::Tensor<double, 3 > ct1AveTensor;
+        Eigen::Tensor<double, 3 > ct1PPETensor;
+        Eigen::Tensor<double, 3 > ct1PPEAveTensor;
 
         /// Total Turbulent tensor
         Eigen::Tensor<double, 3 > cTotalTensor;
         Eigen::Tensor<double, 3 > cTotalAveTensor;
+        Eigen::Tensor<double, 3 > cTotalPPETensor;
+        Eigen::Tensor<double, 3 > cTotalPPEAveTensor;
 
         /// Velocity coefficients for RBF
         Eigen::MatrixXd velRBF;
@@ -172,7 +178,7 @@ class UnsteadyNSTurb: public unsteadyNS
                 label nNutModes);
 
         //--------------------------------------------------------------------------
-        /// @brief      { function_description }
+        /// @brief      ct1 added tensor for the turbulence treatement
         ///
         /// @param[in]  NUmodes    The number of velocity modes.
         /// @param[in]  NSUPmodes  The number of supremizer modes.
@@ -196,7 +202,7 @@ class UnsteadyNSTurb: public unsteadyNS
                 label nNutModes);
 
         //--------------------------------------------------------------------------
-        /// @brief      { function_description }
+        /// @brief      ct2 added tensor for the turbulence treatement
         ///
         /// @param[in]  NUmodes    The number of velocity modes.
         /// @param[in]  NSUPmodes  The number of supremizer modes.
@@ -206,6 +212,79 @@ class UnsteadyNSTurb: public unsteadyNS
         ///
         Eigen::Tensor<double, 3 > turbulenceTensor2(label NUmodes,
                 label NSUPmodes, label nNutModes);
+
+        ///
+        /// @brief      ct1PPE added tensor for the turbulence treatement in the PPE method
+        ///
+        /// @param[in]  NUmodes    The number of velocity modes.
+        /// @param[in]  NSUPmodes  The number of supremizer modes.
+        /// @param[in]  NPmodes    The number of pressure modes.
+        /// @param[in]  nNutModes  The number of eddy viscosity modes.
+        ///
+        /// @return     ct1PPE tensor for the turbulence treatement in the PPE method
+        ///
+        Eigen::Tensor<double, 3 > turbulencePPETensor1(label NUmodes,
+                label NSUPmodes, label NPmodes, label nNutModes);
+        ///
+        /// @brief      ct2PPE added tensor for the turbulence treatement in the PPE method
+        ///
+        /// @param[in]  NUmodes    The number of velocity modes.
+        /// @param[in]  NSUPmodes  The number of supremizer modes.
+        /// @param[in]  NPmodes    The number of pressure modes.
+        /// @param[in]  nNutModes  The number of eddy viscosity modes.
+        ///
+        /// @return     ct2PPE tensor for the turbulence treatement in the PPE method
+        ///
+        Eigen::Tensor<double, 3 > turbulencePPETensor2(label NUmodes,
+                label NSUPmodes, label NPmodes, label nNutModes);
+        ///
+        /// @brief      ct1Ave added tensor for approximation of the averaged part of the eddy viscosity
+        ///
+        /// @param[in]  NUmodes    The number of velocity modes.
+        /// @param[in]  NSUPmodes  The number of supremizer modes.
+        ///
+        /// @return     ct1Ave tensor corresponding to the approximation of the averaged part
+        ///  of the eddy viscosity for the turbulence treatement
+        ///
+        Eigen::Tensor<double, 3> turbulenceAveTensor1(label NUmodes,
+                label NSUPmodes);
+        ///
+        /// @brief      ct2Ave added tensor for approximation of the averaged part of the eddy viscosity
+        ///
+        /// @param[in]  NUmodes    The number of velocity modes.
+        /// @param[in]  NSUPmodes  The number of supremizer modes.
+        ///
+        /// @return     ct2Ave tensor corresponding to the approximation of the averaged part
+        ///  of the eddy viscosity for the turbulence treatement
+        ///
+        Eigen::Tensor<double, 3> turbulenceAveTensor2(label NUmodes,
+                label NSUPmodes);
+        ///
+        /// @brief      ct1PPEAve added tensor for approximation of the averaged part of the eddy viscosity
+        /// with the usage of the PPE approach
+        ///
+        /// @param[in]  NUmodes    The number of velocity modes.
+        /// @param[in]  NSUPmodes  The number of supremizer modes.
+        /// @param[in]  NPmodes    The number of pressure modes.
+        ///
+        /// @return     ct1PPEAve tensor corresponding to the approximation of the averaged part
+        ///  of the eddy viscosity for the turbulence treatement with the usage of the PPE approach
+        ///
+        Eigen::Tensor<double, 3> turbulencePPEAveTensor1(label NUmodes,
+                label NSUPmodes, label NPmodes);
+        ///
+        /// @brief      ct2PPEAve added tensor for approximation of the averaged part of the eddy viscosity
+        /// with the usage of the PPE approach
+        ///
+        /// @param[in]  NUmodes    The number of velocity modes.
+        /// @param[in]  NSUPmodes  The number of supremizer modes.
+        /// @param[in]  NPmodes    The number of pressure modes.
+        ///
+        /// @return     ct2PPEAve tensor corresponding to the approximation of the averaged part
+        ///  of the eddy viscosity for the turbulence treatement with the usage of the PPE approach
+        ///
+        Eigen::Tensor<double, 3> turbulencePPEAveTensor2(label NUmodes,
+                label NSUPmodes, label NPmodes);
 
         //--------------------------------------------------------------------------
         /// @brief      Perform a truthsolve
@@ -247,12 +326,6 @@ class UnsteadyNSTurb: public unsteadyNS
         ///
         /// @return     { description_of_the_return_value }
         ///
-
-        Eigen::Tensor<double, 3> turbulenceAveTensor1(label NUmodes,
-                label NSUPmodes);
-
-        Eigen::Tensor<double, 3> turbulenceAveTensor2(label NUmodes,
-                label NSUPmodes);
 
         List < Eigen::MatrixXd > rbfModifiedCoeffs(Eigen::MatrixXd A, Eigen::MatrixXd G,
                 Eigen::VectorXd initSnapInd);

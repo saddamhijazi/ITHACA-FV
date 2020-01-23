@@ -106,50 +106,60 @@ int main(int argc, char *argv[])
         		int status0 = system(Ucommand);
         		int status1 = system(Pcommand);
         	}
-        	else if(modesToRun.cols()==4)
-        	{
-        		word Ucommand = "sed -i 's/^NmodesU .*$/NmodesU " + name(modesToRun(k,0)) + ";/' ./system/ITHACAdict";
-        		word Pcommand = "sed -i 's/^NmodesP .*$/NmodesP " + name(modesToRun(k,1)) + ";/' ./system/ITHACAdict";
-        		word SUPcommand = "sed -i 's/^NmodesSUP .*$/NmodesSUP " + name(modesToRun(k,2)) + ";/' ./system/ITHACAdict";
-        		word NUTcommand = "sed -i 's/^NmodesNUT .*$/NmodesNUT " + name(modesToRun(k,3)) + ";/' ./system/ITHACAdict";
-        		modesNames = name(modesToRun(k,0)) + "_" + name(modesToRun(k,1)) + "_" + name(modesToRun(k,2)) + "_" 
-        		+ name(modesToRun(k,3));
-        		int status0 = system(Ucommand);
-        		int status1 = system(Pcommand);
-        		int status2 = system(SUPcommand);
-        		int status3 = system(NUTcommand);
-        	}
+            else if(modesToRun.cols()==3)
+            {
+                word Ucommand = "sed -i 's/^NmodesU .*$/NmodesU " + name(modesToRun(k,0)) + ";/' ./system/ITHACAdict";
+                word Pcommand = "sed -i 's/^NmodesP .*$/NmodesP " + name(modesToRun(k,1)) + ";/' ./system/ITHACAdict";
+                word NUTcommand = "sed -i 's/^NmodesNUT .*$/NmodesNUT " + name(modesToRun(k,2)) + ";/' ./system/ITHACAdict";
+                modesNames = name(modesToRun(k,0)) + "_" + name(modesToRun(k,1)) + "_" + name(modesToRun(k,2));
+                int status0 = system(Ucommand);
+                int status1 = system(Pcommand);
+                int status3 = system(NUTcommand);
+            }
+            else if(modesToRun.cols()==4)
+            {
+              word Ucommand = "sed -i 's/^NmodesU .*$/NmodesU " + name(modesToRun(k,0)) + ";/' ./system/ITHACAdict";
+              word Pcommand = "sed -i 's/^NmodesP .*$/NmodesP " + name(modesToRun(k,1)) + ";/' ./system/ITHACAdict";
+              word SUPcommand = "sed -i 's/^NmodesSUP .*$/NmodesSUP " + name(modesToRun(k,2)) + ";/' ./system/ITHACAdict";
+              word NUTcommand = "sed -i 's/^NmodesNUT .*$/NmodesNUT " + name(modesToRun(k,3)) + ";/' ./system/ITHACAdict";
+              modesNames = name(modesToRun(k,0)) + "_" + name(modesToRun(k,1)) + "_" + name(modesToRun(k,2)) + "_" 
+              + name(modesToRun(k,3));
+              int status0 = system(Ucommand);
+              int status1 = system(Pcommand);
+              int status2 = system(SUPcommand);
+              int status3 = system(NUTcommand);
+          }
             //word tau_command = "cp tau_penalty_mat"+name(modesToRun(k,0))+".txt tau_penalty_mat.txt";
             //int status33 = system(tau_command);
-        	for(label ii=1; ii<argc; ii++)
-        	{
-        		std::string app = argv[ii];
-        		int status4 = system(app);
-        	}
+          for(label ii=1; ii<argc; ii++)
+          {
+              std::string app = argv[ii];
+              int status4 = system(app);
+          }
 
-        	
-        	word U_command = "cp ./ITHACAoutput/postProcessing/errorU_mat.m ./ITHACAoutput/postProcessing/errorU_mat"
-        	+ modesNames + ".m";
-        	word p_command = "cp ./ITHACAoutput/postProcessing/errorP_mat.m ./ITHACAoutput/postProcessing/errorP_mat"
-        	+ modesNames + ".m";
-        	word nut_command = "cp ./ITHACAoutput/postProcessing/errorNut_mat.m ./ITHACAoutput/postProcessing/errorNut_mat"
-        	+ modesNames + ".m";
-        	int status5 = system(U_command);
-        	int status6 = system(p_command);
-        	int status7 = system(nut_command);
-        	
-        	
+
+          word U_command = "cp ./ITHACAoutput/postProcessing/errorU_mat.m ./ITHACAoutput/postProcessing/errorU_mat"
+          + modesNames + ".m";
+          word p_command = "cp ./ITHACAoutput/postProcessing/errorP_mat.m ./ITHACAoutput/postProcessing/errorP_mat"
+          + modesNames + ".m";
+          word nut_command = "cp ./ITHACAoutput/postProcessing/errorNut_mat.m ./ITHACAoutput/postProcessing/errorNut_mat"
+          + modesNames + ".m";
+          int status5 = system(U_command);
+          int status6 = system(p_command);
+          int status7 = system(nut_command);
+
+
             //word bc_online = "cp ./ITHACAoutput/Reconstruction/bc_online_mat.m ./ITHACAoutput/Reconstruction/bc_online_mat"
             //+name(modesToRun(k,0)) + ".m";
-        	
 
-        	word folderCommand1 = "cp -r ./ITHACAoutput/LiftandDragMatrices/ ./ITHACAoutput/LiftandDragMatrices"
-        	+ modesNames;
+
+          word folderCommand1 = "cp -r ./ITHACAoutput/LiftandDragMatrices/ ./ITHACAoutput/LiftandDragMatrices"
+          + modesNames;
             // word folderCommand2 = "cp -r ./ITHACAoutput/LiftandDragMatricesLam/ ./ITHACAoutput/LiftandDragMatricesLam"
             // + name(modesToRun(k,0)) + "_" + name(modesToRun(k,1)) + "_" + name(modesToRun(k,2)) + "_" 
             // + name(modesToRun(k,3));
-        	int status8 = system(folderCommand1);
-        }
-        return 0;
-    }
+          int status8 = system(folderCommand1);
+      }
+      return 0;
+  }
 

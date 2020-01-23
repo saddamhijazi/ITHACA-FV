@@ -42,9 +42,9 @@ UnsteadyNSTurbIntrusive::UnsteadyNSTurbIntrusive() {}
 UnsteadyNSTurbIntrusive::UnsteadyNSTurbIntrusive(int argc, char* argv[])
 {
     _args = autoPtr<argList>
-            (
-                new argList(argc, argv)
-            );
+    (
+        new argList(argc, argv)
+        );
 
     if (!_args->checkRootCase())
     {
@@ -55,12 +55,12 @@ UnsteadyNSTurbIntrusive::UnsteadyNSTurbIntrusive(int argc, char* argv[])
 #include "createTime.H"
 #include "createMesh.H"
     _pimple = autoPtr<pimpleControl>
-              (
-                  new pimpleControl
-                  (
-                      mesh
-                  )
-              );
+    (
+      new pimpleControl
+      (
+          mesh
+          )
+      );
 #include "createFields.H"
 #include "createFvOptions.H"
     ITHACAdict = new IOdictionary
@@ -72,18 +72,18 @@ UnsteadyNSTurbIntrusive::UnsteadyNSTurbIntrusive(int argc, char* argv[])
             mesh,
             IOobject::MUST_READ,
             IOobject::NO_WRITE
-        )
-    );
+            )
+        );
     tolerance = ITHACAdict->lookupOrDefault<scalar>("tolerance", 1e-5);
     maxIter = ITHACAdict->lookupOrDefault<scalar>("maxIter", 1000);
     bcMethod = ITHACAdict->lookupOrDefault<word>("bcMethod", "lift");
     timeDerivativeSchemeOrder =
-        ITHACAdict->lookupOrDefault<word>("timeDerivativeSchemeOrder", "second");
+    ITHACAdict->lookupOrDefault<word>("timeDerivativeSchemeOrder", "second");
     M_Assert(bcMethod == "lift" || bcMethod == "penalty",
-             "The BC method must be set to lift or penalty in ITHACAdict");
+       "The BC method must be set to lift or penalty in ITHACAdict");
     M_Assert(timeDerivativeSchemeOrder == "first"
-             || timeDerivativeSchemeOrder == "second",
-             "The time derivative approximation must be set to either first or second order scheme in ITHACAdict");
+       || timeDerivativeSchemeOrder == "second",
+       "The time derivative approximation must be set to either first or second order scheme in ITHACAdict");
     para = new ITHACAparameters;
     offline = ITHACAutilities::check_off();
     podex = ITHACAutilities::check_pod();
@@ -142,8 +142,8 @@ void UnsteadyNSTurbIntrusive::truthSolve(List<scalar> mu_now)
         }
 
         Info << "ExecutionTime = " << runTime.elapsedCpuTime() << " s"
-             << "  ClockTime = " << runTime.elapsedClockTime() << " s"
-             << nl << endl;
+        << "  ClockTime = " << runTime.elapsedClockTime() << " s"
+        << nl << endl;
 
         if (checkWrite(runTime))
         {
@@ -153,7 +153,7 @@ void UnsteadyNSTurbIntrusive::truthSolve(List<scalar> mu_now)
             ITHACAstream::exportSolution(p, name(counter), "./ITHACAoutput/Offline/");
             ITHACAstream::exportSolution(nut, name(counter), "./ITHACAoutput/Offline/");
             std::ofstream of("./ITHACAoutput/Offline/" + name(counter) + "/" +
-                             runTime.timeName());
+               runTime.timeName());
             Ufield.append(U);
             Pfield.append(p);
             nutFields.append(nut);
@@ -182,7 +182,7 @@ void UnsteadyNSTurbIntrusive::truthSolve(List<scalar> mu_now)
     if (mu_samples.rows() == nsnapshots * mu.cols())
     {
         ITHACAstream::exportMatrix(mu_samples, "mu_samples", "eigen",
-                                   "./ITHACAoutput/Offline");
+         "./ITHACAoutput/Offline");
     }
 }
 
@@ -199,7 +199,7 @@ Eigen::Tensor<double, 3> UnsteadyNSTurbIntrusive::turbulenceTensor1(
             for (label k = 0; k < nModes; k++)
             {
                 ct1Tensor(i, j, k) = fvc::domainIntegrate(Umodes[i] & fvc::laplacian(
-                                         nutModes[j], Umodes[k])).value();
+                   nutModes[j], Umodes[k])).value();
             }
         }
     }
@@ -211,7 +211,7 @@ Eigen::Tensor<double, 3> UnsteadyNSTurbIntrusive::turbulenceTensor1(
 
     // Export the tensor
     ITHACAstream::SaveDenseTensor(ct1Tensor, "./ITHACAoutput/Matrices/",
-                                  "ct1_" + name(nModes) + "_t");
+      "ct1_" + name(nModes) + "_t");
     return ct1Tensor;
 }
 
@@ -228,7 +228,7 @@ Eigen::Tensor<double, 3> UnsteadyNSTurbIntrusive::turbulenceTensor2(
             for (label k = 0; k < nModes; k++)
             {
                 ct2Tensor(i, j, k) = fvc::domainIntegrate(Umodes[i] & (fvc::div(
-                                         nutModes[j] * dev((fvc::grad(Umodes[k]))().T())))).value();
+                   nutModes[j] * dev2((fvc::grad(Umodes[k]))().T())))).value();
             }
         }
     }
@@ -240,7 +240,7 @@ Eigen::Tensor<double, 3> UnsteadyNSTurbIntrusive::turbulenceTensor2(
 
     // Export the tensor
     ITHACAstream::SaveDenseTensor(ct2Tensor, "./ITHACAoutput/Matrices/",
-                                  "ct2_" + name(nModes) + "_t");
+      "ct2_" + name(nModes) + "_t");
     return ct2Tensor;
 }
 
@@ -254,15 +254,15 @@ Eigen::MatrixXd UnsteadyNSTurbIntrusive::btTurbulence(label nModes)
     {
         for (label j = 0; j < nModes; j++)
         {
-            btMatrix(i, j) = fvc::domainIntegrate(Umodes[i] & (fvc::div(dev((T(
-                    fvc::grad(
-                        Umodes[j]))))))).value();
+            btMatrix(i, j) = fvc::domainIntegrate(Umodes[i] & (fvc::div(dev2((T(
+                fvc::grad(
+                    Umodes[j]))))))).value();
         }
     }
 
     // Export the matrix
     ITHACAstream::SaveDenseMatrix(btMatrix, "./ITHACAoutput/Matrices/",
-                                  "bt_" + name(nModes) + "_t");
+      "bt_" + name(nModes) + "_t");
     return btMatrix;
 }
 
@@ -366,13 +366,13 @@ void UnsteadyNSTurbIntrusive::project(fileName folder, label nModes)
         ITHACAstream::exportMatrix(bMatrix, "b", "python", "./ITHACAoutput/Matrices/");
         ITHACAstream::exportMatrix(kMatrix, "k", "python", "./ITHACAoutput/Matrices/");
         ITHACAstream::exportMatrix(btMatrix, "bt", "python",
-                                   "./ITHACAoutput/Matrices/");
+         "./ITHACAoutput/Matrices/");
         ITHACAstream::exportTensor(convTensor, "c", "python",
-                                   "./ITHACAoutput/Matrices/");
+         "./ITHACAoutput/Matrices/");
         ITHACAstream::exportTensor(ct1Tensor, "ct1", "python",
-                                   "./ITHACAoutput/Matrices/");
+         "./ITHACAoutput/Matrices/");
         ITHACAstream::exportTensor(ct2Tensor, "ct2", "python",
-                                   "./ITHACAoutput/Matrices/");
+         "./ITHACAoutput/Matrices/");
     }
 
     if (para->exportMatlab)
@@ -380,13 +380,13 @@ void UnsteadyNSTurbIntrusive::project(fileName folder, label nModes)
         ITHACAstream::exportMatrix(bMatrix, "b", "matlab", "./ITHACAoutput/Matrices/");
         ITHACAstream::exportMatrix(kMatrix, "k", "matlab", "./ITHACAoutput/Matrices/");
         ITHACAstream::exportMatrix(btMatrix, "bt", "matlab",
-                                   "./ITHACAoutput/Matrices/");
+         "./ITHACAoutput/Matrices/");
         ITHACAstream::exportTensor(convTensor, "c", "matlab",
-                                   "./ITHACAoutput/Matrices/");
+         "./ITHACAoutput/Matrices/");
         ITHACAstream::exportTensor(ct1Tensor, "ct1", "matlab",
-                                   "./ITHACAoutput/Matrices/");
+         "./ITHACAoutput/Matrices/");
         ITHACAstream::exportTensor(ct2Tensor, "ct2", "matlab",
-                                   "./ITHACAoutput/Matrices/");
+         "./ITHACAoutput/Matrices/");
     }
 
     if (para->exportTxt)
@@ -395,11 +395,11 @@ void UnsteadyNSTurbIntrusive::project(fileName folder, label nModes)
         ITHACAstream::exportMatrix(kMatrix, "k", "eigen", "./ITHACAoutput/Matrices/");
         ITHACAstream::exportMatrix(btMatrix, "bt", "eigen", "./ITHACAoutput/Matrices/");
         ITHACAstream::exportTensor(convTensor, "c", "eigen",
-                                   "./ITHACAoutput/Matrices/c");
+         "./ITHACAoutput/Matrices/c");
         ITHACAstream::exportTensor(ct1Tensor, "ct1_", "eigen",
-                                   "./ITHACAoutput/Matrices/ct1");
+         "./ITHACAoutput/Matrices/ct1");
         ITHACAstream::exportTensor(ct2Tensor, "ct2_", "eigen",
-                                   "./ITHACAoutput/Matrices/ct2");
+         "./ITHACAoutput/Matrices/ct2");
     }
 
     bTotalMatrix = bMatrix + btMatrix;
@@ -408,7 +408,7 @@ void UnsteadyNSTurbIntrusive::project(fileName folder, label nModes)
 }
 
 void UnsteadyNSTurbIntrusive::projectPPE(fileName folder, label nUModes,
-        label nPModes)
+    label nPModes)
 {
     NUmodes = nUModes;
     NPmodes = nPModes;
@@ -534,6 +534,30 @@ void UnsteadyNSTurbIntrusive::projectPPE(fileName folder, label nUModes,
             ct2Tensor = turbulenceTensor2(nUModes);
         }
 
+        word ct1PPEStr = "ct1PPE_" + name(nUModes) + "_" + name(nPModes) + "_t";
+
+        if (ITHACAutilities::check_file("./ITHACAoutput/Matrices/" + ct1PPEStr))
+        {
+            ITHACAstream::ReadDenseTensor(ct1PPETensor, "./ITHACAoutput/Matrices/",
+              ct1PPEStr);
+        }
+        else
+        {
+            ct1PPETensor = turbulencePPETensor1(nUModes, nPModes);
+        }
+
+        word ct2PPEStr = "ct2PPE_" + name(nUModes) + "_" + name(nPModes) + "_t";
+
+        if (ITHACAutilities::check_file("./ITHACAoutput/Matrices/" + ct2PPEStr))
+        {
+            ITHACAstream::ReadDenseTensor(ct2PPETensor, "./ITHACAoutput/Matrices/",
+              ct2PPEStr);
+        }
+        else
+        {
+            ct2PPETensor = turbulencePPETensor2(nUModes, nPModes);
+        }
+
         word G_str = "G_" + name(nUModes) + "_" + name(nPModes) + "_t";
 
         if (ITHACAutilities::check_file("./ITHACAoutput/Matrices/" + G_str))
@@ -560,6 +584,8 @@ void UnsteadyNSTurbIntrusive::projectPPE(fileName folder, label nUModes,
         ct1Tensor = turbulenceTensor1(nUModes);
         ct2Tensor = turbulenceTensor2(nUModes);
         D_matrix = laplacianPressure(nPModes);
+        ct1PPETensor = turbulencePPETensor1(nUModes, nPModes);
+        ct2PPETensor = turbulencePPETensor2(nUModes, nPModes);
         gTensor = divMomentum(nUModes, nPModes);
         BC1_matrix = pressureBC1(nUModes, nPModes);
         bc2Tensor = pressureBC2(nUModes, nPModes);
@@ -578,21 +604,25 @@ void UnsteadyNSTurbIntrusive::projectPPE(fileName folder, label nUModes,
         ITHACAstream::exportMatrix(bMatrix, "b", "python", "./ITHACAoutput/Matrices/");
         ITHACAstream::exportMatrix(kMatrix, "k", "python", "./ITHACAoutput/Matrices/");
         ITHACAstream::exportMatrix(btMatrix, "bt", "python",
-                                   "./ITHACAoutput/Matrices/");
+         "./ITHACAoutput/Matrices/");
         ITHACAstream::exportMatrix(D_matrix, "D", "python", "./ITHACAoutput/Matrices/");
         ITHACAstream::exportMatrix(BC1_matrix, "BC1", "python",
-                                   "./ITHACAoutput/Matrices/");
+         "./ITHACAoutput/Matrices/");
         ITHACAstream::exportMatrix(BC3_matrix, "BC3", "python",
-                                   "./ITHACAoutput/Matrices/");
+         "./ITHACAoutput/Matrices/");
+        ITHACAstream::exportTensor(ct1PPETensor, "ct1PPE", "python",
+         "./ITHACAoutput/Matrices/");
+        ITHACAstream::exportTensor(ct2PPETensor, "ct2PPE", "python",
+         "./ITHACAoutput/Matrices/");
         ITHACAstream::exportTensor(gTensor, "G", "python", "./ITHACAoutput/Matrices/");
         ITHACAstream::exportTensor(bc2Tensor, "BC2", "python",
-                                   "./ITHACAoutput/Matrices/");
+         "./ITHACAoutput/Matrices/");
         ITHACAstream::exportTensor(convTensor, "c", "python",
-                                   "./ITHACAoutput/Matrices/");
+         "./ITHACAoutput/Matrices/");
         ITHACAstream::exportTensor(ct1Tensor, "ct1", "python",
-                                   "./ITHACAoutput/Matrices/");
+         "./ITHACAoutput/Matrices/");
         ITHACAstream::exportTensor(ct2Tensor, "ct2", "python",
-                                   "./ITHACAoutput/Matrices/");
+         "./ITHACAoutput/Matrices/");
     }
 
     if (para->exportMatlab)
@@ -600,21 +630,25 @@ void UnsteadyNSTurbIntrusive::projectPPE(fileName folder, label nUModes,
         ITHACAstream::exportMatrix(bMatrix, "b", "matlab", "./ITHACAoutput/Matrices/");
         ITHACAstream::exportMatrix(kMatrix, "k", "matlab", "./ITHACAoutput/Matrices/");
         ITHACAstream::exportMatrix(btMatrix, "bt", "matlab",
-                                   "./ITHACAoutput/Matrices/");
+         "./ITHACAoutput/Matrices/");
         ITHACAstream::exportMatrix(D_matrix, "D", "matlab", "./ITHACAoutput/Matrices/");
         ITHACAstream::exportMatrix(BC1_matrix, "BC1", "matlab",
-                                   "./ITHACAoutput/Matrices/");
+         "./ITHACAoutput/Matrices/");
         ITHACAstream::exportMatrix(BC3_matrix, "BC3", "matlab",
-                                   "./ITHACAoutput/Matrices/");
+         "./ITHACAoutput/Matrices/");
+        ITHACAstream::exportTensor(ct1PPETensor, "ct1PPE", "matlab",
+         "./ITHACAoutput/Matrices/");
+        ITHACAstream::exportTensor(ct2PPETensor, "ct2PPE", "matlab",
+         "./ITHACAoutput/Matrices/");
         ITHACAstream::exportTensor(gTensor, "G", "matlab", "./ITHACAoutput/Matrices/");
         ITHACAstream::exportTensor(bc2Tensor, "BC2", "matlab",
-                                   "./ITHACAoutput/Matrices/");
+         "./ITHACAoutput/Matrices/");
         ITHACAstream::exportTensor(convTensor, "c", "matlab",
-                                   "./ITHACAoutput/Matrices/");
+         "./ITHACAoutput/Matrices/");
         ITHACAstream::exportTensor(ct1Tensor, "ct1", "matlab",
-                                   "./ITHACAoutput/Matrices/");
+         "./ITHACAoutput/Matrices/");
         ITHACAstream::exportTensor(ct2Tensor, "ct2", "matlab",
-                                   "./ITHACAoutput/Matrices/");
+         "./ITHACAoutput/Matrices/");
     }
 
     if (para->exportTxt)
@@ -624,24 +658,30 @@ void UnsteadyNSTurbIntrusive::projectPPE(fileName folder, label nUModes,
         ITHACAstream::exportMatrix(btMatrix, "bt", "eigen", "./ITHACAoutput/Matrices/");
         ITHACAstream::exportMatrix(D_matrix, "D", "eigen", "./ITHACAoutput/Matrices/");
         ITHACAstream::exportMatrix(BC1_matrix, "BC1", "eigen",
-                                   "./ITHACAoutput/Matrices/");
+         "./ITHACAoutput/Matrices/");
         ITHACAstream::exportMatrix(BC3_matrix, "BC3", "eigen",
-                                   "./ITHACAoutput/Matrices/");
+         "./ITHACAoutput/Matrices/");
+        ITHACAstream::exportTensor(ct1PPETensor, "ct1PPE_", "eigen",
+         "./ITHACAoutput/Matrices/ct1PPE");
+        ITHACAstream::exportTensor(ct2PPETensor, "ct2PPE_", "eigen",
+         "./ITHACAoutput/Matrices/ct2PPE");
         ITHACAstream::exportTensor(gTensor, "G", "eigen",
-                                   "./ITHACAoutput/Matrices/G");
+         "./ITHACAoutput/Matrices/G");
         ITHACAstream::exportTensor(bc2Tensor, "BC2_", "eigen",
-                                   "./ITHACAoutput/Matrices/BC2");
+         "./ITHACAoutput/Matrices/BC2");
         ITHACAstream::exportTensor(convTensor, "c", "eigen",
-                                   "./ITHACAoutput/Matrices/c");
+         "./ITHACAoutput/Matrices/c");
         ITHACAstream::exportTensor(ct1Tensor, "ct1_", "eigen",
-                                   "./ITHACAoutput/Matrices/ct1");
+         "./ITHACAoutput/Matrices/ct1");
         ITHACAstream::exportTensor(ct2Tensor, "ct2_", "eigen",
-                                   "./ITHACAoutput/Matrices/ct2");
+         "./ITHACAoutput/Matrices/ct2");
     }
 
     bTotalMatrix = bMatrix + btMatrix;
     cTotalTensor.resize(nUModes, nUModes, nUModes);
     cTotalTensor = convTensor - ct1Tensor - ct2Tensor;
+    cTotalPPETensor.resize(nPModes, nUModes, nUModes);
+    cTotalPPETensor = ct1PPETensor + ct2PPETensor;
 }
 
 Eigen::MatrixXd UnsteadyNSTurbIntrusive::diffusiveTerm(label nModes)
@@ -655,7 +695,7 @@ Eigen::MatrixXd UnsteadyNSTurbIntrusive::diffusiveTerm(label nModes)
         for (label j = 0; j < nModes; j++)
         {
             bMatrix(i, j) = fvc::domainIntegrate(Umodes[i] & fvc::laplacian(
-                    dimensionedScalar("1", dimless, 1), Umodes[j])).value();
+                dimensionedScalar("1", dimless, 1), Umodes[j])).value();
         }
     }
 
@@ -665,7 +705,7 @@ Eigen::MatrixXd UnsteadyNSTurbIntrusive::diffusiveTerm(label nModes)
     }
 
     ITHACAstream::SaveDenseMatrix(bMatrix, "./ITHACAoutput/Matrices/",
-                                  "b_" + name(nModes));
+      "b_" + name(nModes));
     return bMatrix;
 }
 
@@ -681,8 +721,8 @@ Eigen::Tensor<double, 3> UnsteadyNSTurbIntrusive::convectiveTerm(label nModes)
             for (label k = 0; k < nModes; k++)
             {
                 convTensor(i, j, k) = fvc::domainIntegrate(Umodes[i] & fvc::div(
-                                          linearInterpolate(Umodes[j]) & Umodes[j].mesh().Sf(),
-                                          Umodes[k])).value();
+                  linearInterpolate(Umodes[j]) & Umodes[j].mesh().Sf(),
+                  Umodes[k])).value();
             }
         }
     }
@@ -694,7 +734,7 @@ Eigen::Tensor<double, 3> UnsteadyNSTurbIntrusive::convectiveTerm(label nModes)
 
     // Export the tensor
     ITHACAstream::SaveDenseTensor(convTensor, "./ITHACAoutput/Matrices/",
-                                  "c_" + name(nModes) + "_t");
+      "c_" + name(nModes) + "_t");
     return convTensor;
 }
 
@@ -708,7 +748,7 @@ Eigen::MatrixXd UnsteadyNSTurbIntrusive::pressureGradientTerm(label nModes)
         for (label j = 0; j < nModes; j++)
         {
             kMatrix(i, j) = fvc::domainIntegrate(Umodes[i] & fvc::grad(
-                    Pmodes[j])).value();
+                Pmodes[j])).value();
         }
     }
 
@@ -718,12 +758,12 @@ Eigen::MatrixXd UnsteadyNSTurbIntrusive::pressureGradientTerm(label nModes)
     }
 
     ITHACAstream::SaveDenseMatrix(kMatrix, "./ITHACAoutput/Matrices/",
-                                  "k_" + name(nModes));
+      "k_" + name(nModes));
     return kMatrix;
 }
 
 Eigen::MatrixXd UnsteadyNSTurbIntrusive::pressureGradientTerm(label nUModes,
-        label nPModes)
+    label nPModes)
 {
     Eigen::MatrixXd kMatrix(nUModes, nPModes);
 
@@ -733,7 +773,7 @@ Eigen::MatrixXd UnsteadyNSTurbIntrusive::pressureGradientTerm(label nUModes,
         for (label j = 0; j < nPModes; j++)
         {
             kMatrix(i, j) = fvc::domainIntegrate(Umodes[i] & fvc::grad(
-                    Pmodes[j])).value();
+                Pmodes[j])).value();
         }
     }
 
@@ -743,7 +783,7 @@ Eigen::MatrixXd UnsteadyNSTurbIntrusive::pressureGradientTerm(label nUModes,
     }
 
     ITHACAstream::SaveDenseMatrix(kMatrix, "./ITHACAoutput/Matrices/",
-                                  "k_" + name(nUModes) + "_" + name(nPModes));
+      "k_" + name(nUModes) + "_" + name(nPModes));
     return kMatrix;
 }
 
@@ -757,7 +797,7 @@ Eigen::MatrixXd UnsteadyNSTurbIntrusive::laplacianPressure(label nPModes)
         for (label j = 0; j < nPModes; j++)
         {
             dMatrix(i, j) = fvc::domainIntegrate(fvc::grad(Pmodes[i])&fvc::grad(
-                    Pmodes[j])).value();
+                Pmodes[j])).value();
         }
     }
 
@@ -767,12 +807,12 @@ Eigen::MatrixXd UnsteadyNSTurbIntrusive::laplacianPressure(label nPModes)
     }
 
     ITHACAstream::SaveDenseMatrix(dMatrix, "./ITHACAoutput/Matrices/",
-                                  "D_" + name(nPModes));
+      "D_" + name(nPModes));
     return dMatrix;
 }
 
 Eigen::Tensor<double, 3> UnsteadyNSTurbIntrusive::divMomentum(label nUModes,
-        label nPModes)
+    label nPModes)
 {
     label g1Size = nPModes;
     label g2Size = nUModes;
@@ -786,8 +826,8 @@ Eigen::Tensor<double, 3> UnsteadyNSTurbIntrusive::divMomentum(label nUModes,
             for (label k = 0; k < g2Size; k++)
             {
                 gTensor(i, j, k) = fvc::domainIntegrate(fvc::grad(Pmodes[i]) & (fvc::div(
-                        fvc::interpolate(Umodes[j]) & Umodes[j].mesh().Sf(),
-                        Umodes[k]))).value();
+                    fvc::interpolate(Umodes[j]) & Umodes[j].mesh().Sf(),
+                    Umodes[k]))).value();
             }
         }
     }
@@ -799,13 +839,13 @@ Eigen::Tensor<double, 3> UnsteadyNSTurbIntrusive::divMomentum(label nUModes,
 
     // Export the tensor
     ITHACAstream::SaveDenseTensor(gTensor, "./ITHACAoutput/Matrices/",
-                                  "G_" + name(nUModes) + "_" + name(
-                                      nPModes) + "_t");
+      "G_" + name(nUModes) + "_" + name(
+          nPModes) + "_t");
     return gTensor;
 }
 
 Eigen::MatrixXd UnsteadyNSTurbIntrusive::pressureBC1(label nUModes,
-        label nPModes)
+    label nPModes)
 {
     label P_BC1size = nPModes;
     label P_BC2size = nUModes;
@@ -817,7 +857,7 @@ Eigen::MatrixXd UnsteadyNSTurbIntrusive::pressureBC1(label nUModes,
         for (label j = 0; j < P_BC2size; j++)
         {
             surfaceScalarField lpl((fvc::interpolate(fvc::laplacian(
-                                        Umodes[j]))&mesh.Sf())*fvc::interpolate(Pmodes[i]));
+                Umodes[j]))&mesh.Sf())*fvc::interpolate(Pmodes[i]));
             double s = 0;
 
             for (label k = 0; k < lpl.boundaryField().size(); k++)
@@ -835,12 +875,12 @@ Eigen::MatrixXd UnsteadyNSTurbIntrusive::pressureBC1(label nUModes,
     }
 
     ITHACAstream::SaveDenseMatrix(BC1_matrix, "./ITHACAoutput/Matrices/",
-                                  "BC1_" + name(nUModes) + "_" + name(nPModes));
+      "BC1_" + name(nUModes) + "_" + name(nPModes));
     return BC1_matrix;
 }
 
 Eigen::Tensor<double, 3 > UnsteadyNSTurbIntrusive::pressureBC2(label nUModes,
-        label nPModes)
+    label nPModes)
 {
     label pressureBC1Size = nPModes;
     label pressureBC2Size = nUModes;
@@ -855,8 +895,8 @@ Eigen::Tensor<double, 3 > UnsteadyNSTurbIntrusive::pressureBC2(label nUModes,
             for (label k = 0; k < pressureBC2Size; k++)
             {
                 surfaceScalarField div_m(fvc::interpolate(fvc::div(fvc::interpolate(
-                                             Umodes[j]) & mesh.Sf(),
-                                         Umodes[k]))&mesh.Sf()*fvc::interpolate(Pmodes[i]));
+                   Umodes[j]) & mesh.Sf(),
+                Umodes[k]))&mesh.Sf()*fvc::interpolate(Pmodes[i]));
                 double s = 0;
 
                 for (label k = 0; k < div_m.boundaryField().size(); k++)
@@ -876,12 +916,12 @@ Eigen::Tensor<double, 3 > UnsteadyNSTurbIntrusive::pressureBC2(label nUModes,
 
     // Export the tensor
     ITHACAstream::SaveDenseTensor(bc2Tensor, "./ITHACAoutput/Matrices/",
-                                  "BC2_" + name(nUModes) + "_" + name(nPModes) + "_t");
+      "BC2_" + name(nUModes) + "_" + name(nPModes) + "_t");
     return bc2Tensor;
 }
 
 Eigen::MatrixXd UnsteadyNSTurbIntrusive::pressureBC3(label nUModes,
-        label nPModes)
+    label nPModes)
 {
     label P3_BC1size = nPModes;
     label P3_BC2size = nUModes;
@@ -913,12 +953,12 @@ Eigen::MatrixXd UnsteadyNSTurbIntrusive::pressureBC3(label nUModes,
     }
 
     ITHACAstream::SaveDenseMatrix(BC3_matrix, "./ITHACAoutput/Matrices/",
-                                  "BC3_" + name(nUModes) + "_" + name(nPModes));
+      "BC3_" + name(nUModes) + "_" + name(nPModes));
     return BC3_matrix;
 }
 
 Eigen::MatrixXd UnsteadyNSTurbIntrusive::pressureBC4(label nUModes,
-        label nPModes)
+    label nPModes)
 {
     label P4_BC1size = nPModes;
     label P4_BC2size = nUModes;
@@ -950,7 +990,7 @@ Eigen::MatrixXd UnsteadyNSTurbIntrusive::pressureBC4(label nUModes,
     }
 
     ITHACAstream::SaveDenseMatrix(BC4_matrix, "./ITHACAoutput/Matrices/",
-                                  "BC4_" + name(nUModes) + "_" + name(nPModes));
+      "BC4_" + name(nUModes) + "_" + name(nPModes));
     return BC4_matrix;
 }
 
@@ -971,12 +1011,12 @@ List< Eigen::MatrixXd > UnsteadyNSTurbIntrusive::bcVelocityVec(label nModes)
         for (label i = 0; i < nModes; i++)
         {
             bcVelVec[k](i, 0) = gSum(Umodes[i].boundaryField()[BCind].component(
-                                         BCcomp));
+               BCcomp));
         }
     }
 
     ITHACAstream::exportMatrix(bcVelVec, "bcVelVec", "eigen",
-                               "./ITHACAoutput/Matrices/bcVelVec");
+     "./ITHACAoutput/Matrices/bcVelVec");
     return bcVelVec;
 }
 
@@ -1000,13 +1040,80 @@ List< Eigen::MatrixXd > UnsteadyNSTurbIntrusive::bcVelocityMat(label nModes)
             for (label j = 0; j < nModes; j++)
             {
                 bcVelMat[k](i, j) = gSum(Umodes[i].boundaryField()[BCind].component(
-                                             BCcomp) *
-                                         Umodes[j].boundaryField()[BCind].component(BCcomp));
+                   BCcomp) *
+                Umodes[j].boundaryField()[BCind].component(BCcomp));
             }
         }
     }
 
     ITHACAstream::exportMatrix(bcVelMat, "bcVelMat", "eigen",
-                               "./ITHACAoutput/Matrices/bcVelMat");
+     "./ITHACAoutput/Matrices/bcVelMat");
     return bcVelMat;
+}
+
+Eigen::Tensor<double, 3> UnsteadyNSTurbIntrusive::turbulencePPETensor1(label nUModes, label nPModes)
+{
+    Eigen::Tensor<double, 3> ct1PPETensor;
+    ct1PPETensor.resize(nPModes, nUModes, nUModes);
+
+    for (label i = 0; i < nPModes; i++)
+    {
+        for (label j = 0; j < nUModes; j++)
+        {
+            for (label k = 0; k < nUModes; k++)
+            {
+                // ct1PPETensor(i, j, k) = fvc::domainIntegrate(2 * Pmodes[i] * (fvc::laplacian(
+                //                             L_U_SUPmodes[k]) & fvc::grad(nutModes[j]))).value();
+                // ct1PPETensor(i, j, k) = fvc::domainIntegrate(Pmodes[i] * (fvc::div(
+                //     fvc::laplacian(
+                //         nutModes[j], L_U_SUPmodes[k])))).value();
+                ct1PPETensor(i, j, k) = fvc::domainIntegrate(fvc::grad(Pmodes[i]) & (
+                    fvc::laplacian(
+                        nutModes[j], Umodes[k]))).value();
+            }
+        }
+    }
+
+    if (Pstream::parRun())
+    {
+        reduce(ct1PPETensor, sumOp<Eigen::Tensor<double, 3>>());
+    }
+
+    // Export the tensor
+    ITHACAstream::SaveDenseTensor(ct1PPETensor, "./ITHACAoutput/Matrices/",
+      "ct1PPE_" + name(nUModes) + "_" + name(nPModes) + "_t");
+    return ct1PPETensor;
+}
+
+Eigen::Tensor<double, 3> UnsteadyNSTurbIntrusive::turbulencePPETensor2(label nUModes, label nPModes)
+{
+    Eigen::Tensor<double, 3> ct2PPETensor;
+    ct2PPETensor.resize(nPModes, nUModes, nUModes);
+
+    for (label i = 0; i < nPModes; i++)
+    {
+        for (label j = 0; j < nUModes; j++)
+        {
+            for (label k = 0; k < nUModes; k++)
+            {
+                // ct2PPETensor(i, j, k) = fvc::domainIntegrate(Pmodes[i] * (fvc::grad(fvc::grad(
+                //                             nutModes[j])) && (dev2((fvc::grad(L_U_SUPmodes[k]))() + fvc::grad(
+                //                                         L_U_SUPmodes[k]))().T()))).value();
+                // ct2PPETensor(i, j, k) = fvc::domainIntegrate(Pmodes[i] * ((fvc::div(fvc::div(
+                //     nutModes[j] * dev2((fvc::grad(L_U_SUPmodes[k]))().T())))))).value();
+                ct2PPETensor(i, j, k) = fvc::domainIntegrate(fvc::grad(Pmodes[i]) & ((fvc::div(
+                    nutModes[j] * dev2((fvc::grad(Umodes[k]))().T()))))).value();
+            }
+        }
+    }
+
+    if (Pstream::parRun())
+    {
+        reduce(ct2PPETensor, sumOp<Eigen::Tensor<double, 3>>());
+    }
+
+    // Export the tensor
+    ITHACAstream::SaveDenseTensor(ct2PPETensor, "./ITHACAoutput/Matrices/",
+      "ct2PPE_" + name(nUModes) + "_" + name(nPModes) + "_t");
+    return ct2PPETensor;
 }

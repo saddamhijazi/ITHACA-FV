@@ -192,14 +192,6 @@ class ReducedUnsteadyNSTurbIntrusive: public reducedUnsteadyNS
         ///
         void reconstructLiftAndDrag(UnsteadyNSTurbIntrusive& problem,
                                     fileName folder);
-        //--------------------------------------------------------------------------
-        /// @brief      Method to compute the reduced order forces for different number of modes of velocity and pressure
-        ///
-        /// @param      problem  A UnsteadyNSTurbIntrusive full order problem.
-        /// @param[in]  folder   The folder where to output the forces matrices
-        ///
-        void reconstructLiftAndDragPPE(UnsteadyNSTurbIntrusive& problem,
-                                       fileName folder);
 };
 
 

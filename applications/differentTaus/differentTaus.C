@@ -86,43 +86,48 @@ int main(int argc, char *argv[])
 // #include "createMesh.H"
 
 	std::string app = argv[1];
-        word toRun("./radii"); // the offline samples.
-        Eigen::MatrixXd radiiToRun = ITHACAstream::readMatrix(toRun);
-        int N_run = radiiToRun.rows();
+        word toRun("./taus"); // the offline samples.
+        Eigen::MatrixXd tausToRun = ITHACAstream::readMatrix(toRun);
+        int N_run = tausToRun.rows();
+        int status1 = system("mkdir ./ITHACAoutput/diffTaus");
+        int status2 = system("mkdir ./ITHACAoutput/diffTaus/postProcessing/");
+
 
         for (label k = 0; k < N_run; k++)
         {
-        	word radiusCommand = "sed -i 's/^RBFradius .*$/RBFradius " + name(radiiToRun(k,0)) + ";/' ./system/ITHACAdict";
-        	int status0 = system(radiusCommand);
+        	word penaltyCommand = "sed -i 's/^penaltyFactor .*$/penaltyFactor " + name(tausToRun(k,0)) + ";/' ./system/ITHACAdict";
+        	int status0 = system(penaltyCommand);
             //word tau_command = "cp tau_penalty_mat"+name(radiiToRun(k,0))+".txt tau_penalty_mat.txt";
             //int status33 = system(tau_command);
 
-        	int status1 = system(app);
-            //int status5 = system("compute_error");
-            //word U_command = "cp ./ITHACAoutput/postProcessing/errorUSUP_mat.m ./ITHACAoutput/postProcessing/errorUSUP_mat"
-            //+name(radiiToRun(k,0)) + ".m";
-            //word p_command = "cp ./ITHACAoutput/postProcessing/errorPSUP_mat.m ./ITHACAoutput/postProcessing/errorPSUP_mat"
-            //+name(radiiToRun(k,0)) + ".m";
+            for(label ii=1; ii<argc; ii++)
+            {
+              std::string app = argv[ii];
+              int status3 = system(app);
+          }       
+          
+          word U_command = "cp ./ITHACAoutput/postProcessing/errorU_mat.m ./ITHACAoutput/diffTaus/postProcessing/errorU_mat"
+          + name(k+1) + ".m";
+          word p_command = "cp ./ITHACAoutput/postProcessing/errorP_mat.m ./ITHACAoutput/diffTaus/postProcessing/errorP_mat"
+          + name(k+1) + ".m";
+          word nut_command = "cp ./ITHACAoutput/postProcessing/errorNut_mat.m ./ITHACAoutput/diffTaus/postProcessing/errorNut_mat"
+          + name(k+1) + ".m";
+          int status4 = system(U_command);
+          int status5 = system(p_command);
+          int status6 = system(nut_command);
             //word bc_online = "cp ./ITHACAoutput/Reconstruction/bc_online_mat.m ./ITHACAoutput/Reconstruction/bc_online_mat"
             //+name(radiiToRun(k,0)) + ".m";
             //int status6 = system(U_command);
             //int status7 = system(p_command);
             //int status8 = system(bc_online);
 
-            word removeWeights1 = "rm -r ITHACAoutput/weightsSUP/";
-            word removeWeights2 = "rm -r ITHACAoutput/weightsPPE/";
+          word folderCommand2 = "cp -r ./ITHACAoutput/LiftandDragMatrices/ ./ITHACAoutput/diffTaus/LiftandDragMatrices"
+          + name(k+1);
+          
 
-            word folderCommand2 = "cp -r ./ITHACAoutput/LiftandDragMatrices/ ./ITHACAoutput/LiftandDragMatrices"
-            + name(radiiToRun(k,0));
-            word fileCommand1 = "cp ./ITHACAoutput/CrossValidation/rbfCoeffMat_mat.m ./ITHACAoutput/CrossValidation/rbfCoeffMat_"
-            + name(k+1) +"mat.m";
+          int status7 = system(folderCommand2);
 
-            int status2 = system(removeWeights1);
-            int status3 = system(removeWeights2);
-            int status4 = system(folderCommand2);
-            int status5 = system(fileCommand1);
-
-        }
-        return 0;
-    }
+      }
+      return 0;
+  }
 
