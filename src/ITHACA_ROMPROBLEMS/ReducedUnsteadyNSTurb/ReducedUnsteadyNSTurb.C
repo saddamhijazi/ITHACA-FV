@@ -290,6 +290,7 @@ int newtonUnsteadyNSTurbPPE::operator()(const Eigen::VectorXd& x,
     Eigen::MatrixXd cc(1, 1);
     Eigen::MatrixXd gg(1, 1);
     Eigen::MatrixXd bb(1, 1);
+    Eigen::MatrixXd nn(1, 1);
     // Mom Term
     Eigen::VectorXd m1 = problem->bTotalMatrix * aTmp * nu;
     // Gradient of pressure
@@ -335,8 +336,12 @@ int newtonUnsteadyNSTurbPPE::operator()(const Eigen::VectorXd& x,
                 j) * aTmp;
         bb = aTmp.transpose() * Eigen::SliceFromTensor(problem->bc2Tensor, 0,
                 j) * aTmp;
-        //fvec(k) = m3(j, 0) - gg(0, 0) - m6(j, 0) + bb(0, 0);
-        fvec(k) = m3(j, 0) + gg(0, 0) - m7(j, 0);
+        nn = gNut.transpose() *
+             Eigen::SliceFromTensor(problem->cTotalPPETensor, 0,
+                                    j) * aTmp;
+        //fvec(k) = m3(j, 0) + gg(0, 0) - m6(j, 0) + bb(0, 0) - nn(0, 0);
+        fvec(k) = m3(j, 0) + gg(0, 0) - m7(j, 0) - nn(0, 0);
+        //fvec(k) = m3(j, 0) + gg(0, 0) - m7(j, 0);
     }
 
     if (problem->bcMethod == "lift")
@@ -1065,6 +1070,17 @@ void ReducedUnsteadyNSTurb::solveOnlinePPEAve(Eigen::MatrixXd vel)
         }
     }
 
+    int firstRBFInd;
+
+    if (skipLift == true)
+    {
+        firstRBFInd = N_BC;
+    }
+    else
+    {
+        firstRBFInd = 0;
+    }
+
     // Set some properties of the newton object
     newtonObjectPPEAve.nu = nu;
     newtonObjectPPEAve.y_old = y;
@@ -1129,24 +1145,24 @@ void ReducedUnsteadyNSTurb::solveOnlinePPEAve(Eigen::MatrixXd vel)
         switch (interChoice)
         {
             case 1:
-                tv << y.head(dimA);
+                tv << y.segment(firstRBFInd, dimA);
                 break;
 
             case 2:
-                tv << muStar, y.head(dimA - muStar.size());
+                tv << muStar, y.segment(firstRBFInd, dimA - muStar.size());
                 break;
 
             case 3:
-                tv << y.head(dimA / 2), aDer.head(dimA / 2);
+                tv << y.segment(firstRBFInd, dimA / 2), aDer.segment(firstRBFInd, dimA / 2);
                 break;
 
             case 4:
-                tv << muStar, y.head((dimA - muStar.size()) / 2),
-                aDer.head((dimA - muStar.size()) / 2);
+                tv << muStar, y.segment(firstRBFInd, (dimA - muStar.size()) / 2),
+                aDer.segment(firstRBFInd, (dimA - muStar.size()) / 2);
                 break;
 
             default:
-                tv << y.head(dimA);
+                tv << y.segment(firstRBFInd, dimA);
                 break;
         }
 
@@ -1224,6 +1240,11 @@ void ReducedUnsteadyNSTurb::reconstructPPE(fileName folder)
     int exportEveryIndex = round(exportEvery / storeEvery);
     volScalarField nutAveNow("nutAveNow", nutModes[0] * 0);
 
+    for (label k = 0; k < problem->nutAve.size(); k++)
+    {
+        nutAveNow += gNutAve(k) * problem->nutAve[k];
+    }
+
     for (label i = 0; i < online_solution.size(); i++)
     {
         if (counter == nextWrite)
@@ -1263,6 +1284,78 @@ void ReducedUnsteadyNSTurb::reconstructPPE(fileName folder)
     }
 }
 
+void ReducedUnsteadyNSTurb::reconstructPPE(PtrList<volVectorField>& uROM,
+        PtrList<volScalarField>& pROM,
+        PtrList<volScalarField>& nutROM, fileName folder, bool exportFields)
+{
+    if (exportFields)
+    {
+        mkDir(folder);
+        ITHACAutilities::createSymLink(folder);
+    }
+
+    int counter = 0;
+    int nextWrite = 0;
+    int counter2 = 1;
+    int exportEveryIndex = round(exportEvery / storeEvery);
+    volScalarField nutAveNow("nutAveNow", nutModes[0] * 0);
+
+    for (label k = 0; k < problem->nutAve.size(); k++)
+    {
+        nutAveNow += gNutAve(k) * problem->nutAve[k];
+    }
+
+    uROM.resize(0);
+    pROM.resize(0);
+    nutROM.resize(0);
+
+    for (label i = 0; i < online_solution.size(); i++)
+    {
+        if (counter == nextWrite)
+        {
+            volVectorField uRec("uRec", Umodes[0] * 0);
+
+            for (label j = 0; j < Nphi_u; j++)
+            {
+                uRec += Umodes[j] * online_solution[i](j + 1, 0);
+            }
+
+            volScalarField pRec("pRec", Pmodes[0] * 0);
+
+            for (label j = 0; j < Nphi_p; j++)
+            {
+                pRec += Pmodes[j] * online_solution[i](j + Nphi_u + 1, 0);
+            }
+
+            volScalarField nutRec("nutRec", nutModes[0] * 0);
+
+            for (label j = 0; j < nphiNut; j++)
+            {
+                nutRec += nutModes[j] * rbfCoeffMat(j + 1, i);
+            }
+
+            nutRec += nutAveNow;
+
+            if (exportFields)
+            {
+                ITHACAstream::exportSolution(uRec,  name(counter2), folder);
+                ITHACAstream::exportSolution(pRec, name(counter2), folder);
+                ITHACAstream::exportSolution(nutRec, name(counter2), folder);
+                double timeNow = online_solution[i](0, 0);
+                std::ofstream of(folder + name(counter2) + "/" + name(timeNow));
+            }
+
+            uROM.append(uRec);
+            pROM.append(pRec);
+            nutROM.append(nutRec);
+            nextWrite += exportEveryIndex;
+            counter2 ++;
+        }
+
+        counter++;
+    }
+}
+
 void ReducedUnsteadyNSTurb::reconstructSUP(fileName folder)
 {
     mkDir(folder);
@@ -1272,6 +1365,11 @@ void ReducedUnsteadyNSTurb::reconstructSUP(fileName folder)
     int counter2 = 1;
     int exportEveryIndex = round(exportEvery / storeEvery);
     volScalarField nutAveNow("nutAveNow", nutModes[0] * 0);
+
+    for (label k = 0; k < problem->nutAve.size(); k++)
+    {
+        nutAveNow += gNutAve(k) * problem->nutAve[k];
+    }
 
     for (label i = 0; i < online_solution.size(); i++)
     {
@@ -1305,6 +1403,78 @@ void ReducedUnsteadyNSTurb::reconstructSUP(fileName folder)
             nextWrite += exportEveryIndex;
             double timeNow = online_solution[i](0, 0);
             std::ofstream of(folder + name(counter2) + "/" + name(timeNow));
+            counter2 ++;
+        }
+
+        counter++;
+    }
+}
+
+void ReducedUnsteadyNSTurb::reconstructSUP(PtrList<volVectorField>& uROM,
+        PtrList<volScalarField>& pROM,
+        PtrList<volScalarField>& nutROM, fileName folder, bool exportFields)
+{
+    if (exportFields)
+    {
+        mkDir(folder);
+        ITHACAutilities::createSymLink(folder);
+    }
+
+    int counter = 0;
+    int nextWrite = 0;
+    int counter2 = 1;
+    int exportEveryIndex = round(exportEvery / storeEvery);
+    volScalarField nutAveNow("nutAveNow", nutModes[0] * 0);
+
+    for (label k = 0; k < problem->nutAve.size(); k++)
+    {
+        nutAveNow += gNutAve(k) * problem->nutAve[k];
+    }
+
+    uROM.resize(0);
+    pROM.resize(0);
+    nutROM.resize(0);
+
+    for (label i = 0; i < online_solution.size(); i++)
+    {
+        if (counter == nextWrite)
+        {
+            volVectorField uRec("uRec", Umodes[0] * 0);
+
+            for (label j = 0; j < Nphi_u; j++)
+            {
+                uRec += Umodes[j] * online_solution[i](j + 1, 0);
+            }
+
+            volScalarField pRec("pRec", Pmodes[0] * 0);
+
+            for (label j = 0; j < Nphi_p; j++)
+            {
+                pRec += Pmodes[j] * online_solution[i](j + Nphi_u + 1, 0);
+            }
+
+            volScalarField nutRec("nutRec", nutModes[0] * 0);
+
+            for (label j = 0; j < nphiNut; j++)
+            {
+                nutRec += nutModes[j] * rbfCoeffMat(j + 1, i);
+            }
+
+            nutRec += nutAveNow;
+
+            if (exportFields)
+            {
+                ITHACAstream::exportSolution(uRec,  name(counter2), folder);
+                ITHACAstream::exportSolution(pRec, name(counter2), folder);
+                ITHACAstream::exportSolution(nutRec, name(counter2), folder);
+                double timeNow = online_solution[i](0, 0);
+                std::ofstream of(folder + name(counter2) + "/" + name(timeNow));
+            }
+
+            uROM.append(uRec);
+            pROM.append(pRec);
+            nutROM.append(nutRec);
+            nextWrite += exportEveryIndex;
             counter2 ++;
         }
 

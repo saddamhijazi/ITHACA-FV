@@ -179,6 +179,7 @@ int newtonUnsteadyNSTurbIntrusivePPE::operator()(const Eigen::VectorXd& x,
     Eigen::MatrixXd cc(1, 1);
     Eigen::MatrixXd gg(1, 1);
     Eigen::MatrixXd bb(1, 1);
+    Eigen::MatrixXd nn(1, 1);
     // Mom Term
     Eigen::VectorXd m1 = problem->bTotalMatrix * aTmp * nu;
     // Gradient of pressure
@@ -221,8 +222,11 @@ int newtonUnsteadyNSTurbIntrusivePPE::operator()(const Eigen::VectorXd& x,
                 j) * aTmp;
         bb = aTmp.transpose() * Eigen::SliceFromTensor(problem->bc2Tensor, 0,
                 j) * aTmp;
+        nn = aTmp.transpose() * Eigen::SliceFromTensor(problem->cTotalPPETensor, 0,
+                j) * aTmp;
         //fvec(k) = m3(j, 0) - gg(0, 0) - m6(j, 0) + bb(0, 0);
-        fvec(k) = m3(j, 0) + gg(0, 0) - m7(j, 0);
+        fvec(k) = m3(j, 0) + gg(0, 0) - m7(j, 0) - nn(0, 0);
+        //fvec(k) = m3(j, 0) + gg(0, 0) - m7(j, 0);
     }
 
     if (problem->bcMethod == "lift")
@@ -313,7 +317,7 @@ void ReducedUnsteadyNSTurbIntrusive::solveOnline(Eigen::MatrixXd vel)
     tmp_sol(0) = time;
     tmp_sol.col(0).tail(y.rows()) = y;
 
-    if (time != 0)
+    if ((time != 0) || (startFromZero == true))
     {
         online_solution[counter] = tmp_sol;
         counter ++;
@@ -321,10 +325,6 @@ void ReducedUnsteadyNSTurbIntrusive::solveOnline(Eigen::MatrixXd vel)
         nextStore += numberOfStores;
     }
 
-    online_solution[counter] = tmp_sol;
-    counter ++;
-    counter2++;
-    nextStore += numberOfStores;
     // Create nonlinear solver object
     Eigen::HybridNonLinearSolver<newtonUnsteadyNSTurbIntrusive> hnls(
         newtonObject);
@@ -584,6 +584,59 @@ void ReducedUnsteadyNSTurbIntrusive::reconstruct(fileName folder)
     }
 }
 
+void ReducedUnsteadyNSTurbIntrusive::reconstruct(PtrList<volVectorField>& uROM,
+        PtrList<volScalarField>& pROM,
+        PtrList<volScalarField>& nutROM, fileName folder, bool exportFields)
+{
+    if (exportFields)
+    {
+        mkDir(folder);
+        ITHACAutilities::createSymLink(folder);
+    }
+
+    int counter = 0;
+    int nextWrite = 0;
+    int counter2 = 1;
+    int exportEveryIndex = round(exportEvery / storeEvery);
+    uROM.resize(0);
+    pROM.resize(0);
+    nutROM.resize(0);
+
+    for (label i = 0; i < online_solution.size(); i++)
+    {
+        if (counter == nextWrite)
+        {
+            volVectorField uRec("uRec", Umodes[0] * 0);
+            volScalarField pRec("pRec", Pmodes[0] * 0);
+            volScalarField nutRec("nutRec", nutModes[0] * 0);
+
+            for (label j = 0; j < Nphi_u; j++)
+            {
+                uRec += Umodes[j] * online_solution[i](j + 1, 0);
+                pRec += Pmodes[j] * online_solution[i](j + 1, 0);
+                nutRec += nutModes[j] * online_solution[i](j + 1, 0);
+            }
+
+            if (exportFields)
+            {
+                ITHACAstream::exportSolution(uRec,  name(counter2), folder);
+                ITHACAstream::exportSolution(pRec, name(counter2), folder);
+                ITHACAstream::exportSolution(nutRec, name(counter2), folder);
+                double timeNow = online_solution[i](0, 0);
+                std::ofstream of(folder + name(counter2) + "/" + name(timeNow));
+            }
+
+            uROM.append(uRec);
+            pROM.append(pRec);
+            nutROM.append(nutRec);
+            nextWrite += exportEveryIndex;
+            counter2 ++;
+        }
+
+        counter++;
+    }
+}
+
 void ReducedUnsteadyNSTurbIntrusive::reconstructPPE(fileName folder)
 {
     mkDir(folder);
@@ -618,6 +671,64 @@ void ReducedUnsteadyNSTurbIntrusive::reconstructPPE(fileName folder)
             nextWrite += exportEveryIndex;
             double timeNow = online_solution[i](0, 0);
             std::ofstream of(folder + name(counter2) + "/" + name(timeNow));
+            counter2 ++;
+        }
+
+        counter++;
+    }
+}
+
+void ReducedUnsteadyNSTurbIntrusive::reconstructPPE(PtrList<volVectorField>&
+        uROM,
+        PtrList<volScalarField>& pROM,
+        PtrList<volScalarField>& nutROM, fileName folder, bool exportFields)
+{
+    if (exportFields)
+    {
+        mkDir(folder);
+        ITHACAutilities::createSymLink(folder);
+    }
+
+    int counter = 0;
+    int nextWrite = 0;
+    int counter2 = 1;
+    int exportEveryIndex = round(exportEvery / storeEvery);
+    uROM.resize(0);
+    pROM.resize(0);
+    nutROM.resize(0);
+
+    for (label i = 0; i < online_solution.size(); i++)
+    {
+        if (counter == nextWrite)
+        {
+            volVectorField uRec("uRec", Umodes[0] * 0);
+            volScalarField pRec("pRec", Pmodes[0] * 0);
+            volScalarField nutRec("nutRec", nutModes[0] * 0);
+
+            for (label j = 0; j < Nphi_u; j++)
+            {
+                uRec += Umodes[j] * online_solution[i](j + 1, 0);
+                nutRec += nutModes[j] * online_solution[i](j + 1, 0);
+            }
+
+            for (label j = 0; j < Nphi_p; j++)
+            {
+                pRec +=  Pmodes[j] * online_solution[i](j + Nphi_u + 1, 0);
+            }
+
+            if (exportFields)
+            {
+                ITHACAstream::exportSolution(uRec,  name(counter2), folder);
+                ITHACAstream::exportSolution(pRec, name(counter2), folder);
+                ITHACAstream::exportSolution(nutRec, name(counter2), folder);
+                double timeNow = online_solution[i](0, 0);
+                std::ofstream of(folder + name(counter2) + "/" + name(timeNow));
+            }
+
+            uROM.append(uRec);
+            pROM.append(pRec);
+            nutROM.append(nutRec);
+            nextWrite += exportEveryIndex;
             counter2 ++;
         }
 

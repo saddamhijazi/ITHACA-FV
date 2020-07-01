@@ -249,6 +249,9 @@ class ReducedUnsteadyNSTurb: public reducedUnsteadyNS
         /// Interpolation independent variable choice
         int interChoice = 1;
 
+        /// Interpolation boolean variable to skip lifting functions
+        bool skipLift = false;
+
         // Functions
 
         ///
@@ -299,6 +302,35 @@ class ReducedUnsteadyNSTurb: public reducedUnsteadyNS
         ///
         void reconstructSUP(fileName folder = "./online_rec");
 
+        ///
+        /// Method to reconstruct the solutions from an online solve with a PPE stabilisation technique
+        /// stabilisation method, the method fills the solution lists for the velocity, pressure and
+        /// the eddy viscosity, a boolean variable has to be set to true if one wants to export the fields.        ///
+        /// @param      uROM       The list of velocity ROM fields to be passed as empty list
+        /// @param      pROM       The list of pressure ROM fields to be passed as empty list
+        /// @param      nutROM     The list of eddy viscosity ROM fields to be passed as empty list
+        /// @param[in]  folder     The folder where to output the solutions
+        /// @param[in]  exportFields  The export fields boolean variable
+        ///
+        void reconstructPPE(PtrList<volVectorField>& uROM,
+                            PtrList<volScalarField>& pROM,
+                            PtrList<volScalarField>& nutROM, fileName folder = "./online_rec",
+                            bool exportFields = false);
+        ///
+        /// Method to reconstruct the solutions from an online solve with a supremizer stabilisation technique
+        /// stabilisation method, the method fills the solution lists for the velocity, pressure and
+        /// the eddy viscosity, a boolean variable has to be set to true if one wants to export the fields.
+        ///
+        /// @param      uROM       The list of velocity ROM fields to be passed as empty list
+        /// @param      pROM       The list of velocity ROM fields to be passed as empty list
+        /// @param      nutROM     The list of velocity ROM fields to be passed as empty list
+        /// @param[in]  folder     The folder where to output the solutions
+        /// @param[in]  exportFields  The export fields boolean variable
+        ///
+        void reconstructSUP(PtrList<volVectorField>& uROM,
+                            PtrList<volScalarField>& pROM,
+                            PtrList<volScalarField>& nutROM, fileName folder = "./online_rec",
+                            bool exportFields = false);
         ///
         /// @brief      Sets the online velocity.
         ///

@@ -138,15 +138,25 @@ int main(int argc, char *argv[])
           }
 
 
-          word U_command = "cp ./ITHACAoutput/postProcessing/errorU_mat.m ./ITHACAoutput/postProcessing/errorU_mat"
+          word U_command1 = "cp ./ITHACAoutput/ErrorsL2/errL2U_mat.m ./ITHACAoutput/ErrorsL2/errL2U_mat"
           + modesNames + ".m";
-          word p_command = "cp ./ITHACAoutput/postProcessing/errorP_mat.m ./ITHACAoutput/postProcessing/errorP_mat"
+          word p_command1 = "cp ./ITHACAoutput/ErrorsL2/errL2P_mat.m ./ITHACAoutput/ErrorsL2/errL2P_mat"
           + modesNames + ".m";
-          word nut_command = "cp ./ITHACAoutput/postProcessing/errorNut_mat.m ./ITHACAoutput/postProcessing/errorNut_mat"
+          word nut_command1 = "cp ./ITHACAoutput/ErrorsL2/errL2Nut_mat.m ./ITHACAoutput/ErrorsL2/errL2Nut_mat"
           + modesNames + ".m";
-          int status5 = system(U_command);
-          int status6 = system(p_command);
-          int status7 = system(nut_command);
+          int status5 = system(U_command1);
+          int status6 = system(p_command1);
+          int status7 = system(nut_command1);
+
+          word U_command2 = "cp ./ITHACAoutput/ErrorsFrob/errFrobU_mat.m ./ITHACAoutput/ErrorsFrob/errFrobU_mat"
+          + modesNames + ".m";
+          word p_command2 = "cp ./ITHACAoutput/ErrorsFrob/errFrobP_mat.m ./ITHACAoutput/ErrorsFrob/errFrobP_mat"
+          + modesNames + ".m";
+          word nut_command2 = "cp ./ITHACAoutput/ErrorsFrob/errFrobNut_mat.m ./ITHACAoutput/ErrorsFrob/errFrobNut_mat"
+          + modesNames + ".m";
+          int status8 = system(U_command2);
+          int status9 = system(p_command2);
+          int status10 = system(nut_command2);
 
 
             //word bc_online = "cp ./ITHACAoutput/Reconstruction/bc_online_mat.m ./ITHACAoutput/Reconstruction/bc_online_mat"
@@ -158,7 +168,7 @@ int main(int argc, char *argv[])
             // word folderCommand2 = "cp -r ./ITHACAoutput/LiftandDragMatricesLam/ ./ITHACAoutput/LiftandDragMatricesLam"
             // + name(modesToRun(k,0)) + "_" + name(modesToRun(k,1)) + "_" + name(modesToRun(k,2)) + "_" 
             // + name(modesToRun(k,3));
-          int status8 = system(folderCommand1);
+          int status11 = system(folderCommand1);
       }
       return 0;
   }
