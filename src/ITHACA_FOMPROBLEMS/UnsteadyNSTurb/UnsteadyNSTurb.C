@@ -209,6 +209,9 @@ Eigen::Tensor<double, 3> UnsteadyNSTurb::turbulenceTensor1(label NUmodes,
 
     for (label i = 0; i < cSize; i++)
     {
+        Info << "Filling layer number " << name(i + 1) << " in the turbulent tensor CT1"
+             << endl;
+
         for (label j = 0; j < nNutModes; j++)
         {
             for (label k = 0; k < cSize; k++)
@@ -328,6 +331,9 @@ Eigen::Tensor<double, 3> UnsteadyNSTurb::turbulenceTensor2(label NUmodes,
 
     for (label i = 0; i < cSize; i++)
     {
+        Info << "Filling layer number " << name(i + 1) << " in the turbulent tensor CT2"
+             << endl;
+
         for (label j = 0; j < nNutModes; j++)
         {
             for (label k = 0; k < cSize; k++)
@@ -677,7 +683,7 @@ void UnsteadyNSTurb::projectSUP(fileName folder, label NU, label NP, label NSUP,
                                        "./ITHACAoutput/Matrices/");
         }
     }
-    
+
     if (para->exportMatlab)
     {
         ITHACAstream::exportMatrix(B_matrix, "B", "matlab", "./ITHACAoutput/Matrices/");
@@ -1267,7 +1273,7 @@ void UnsteadyNSTurb::projectPPE(fileName folder, label NU, label NP, label NSUP,
                 {
                     samples[i]->addSample(velRBF.row(j), coeffL2(i, j));
                 }
-
+                
                 rbfSplines[i] = new SPLINTER::RBFSpline(*samples[i],
                                                         SPLINTER::RadialBasisFunctionType::GAUSSIAN, false, radii(i));
                 ITHACAstream::SaveDenseMatrix(rbfSplines[i]->weights,

@@ -252,6 +252,12 @@ class ReducedUnsteadyNSTurb: public reducedUnsteadyNS
         /// Interpolation boolean variable to skip lifting functions
         bool skipLift = false;
 
+        /// To use viscosity coefficient from matrix or interpolating them
+        bool readViscCoeff = false;
+
+        /// The matrix of the eddy viscosity coefficients in case of readViscCoeff is true
+        Eigen::MatrixXd nutCoeffsL2;
+
         /// Reconstructed eddy viscosity fields list
         PtrList<volScalarField> nutRecFields;
 

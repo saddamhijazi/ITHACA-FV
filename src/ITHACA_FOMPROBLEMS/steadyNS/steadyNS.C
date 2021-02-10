@@ -901,6 +901,9 @@ List <Eigen::MatrixXd> steadyNS::convective_term(label NUmodes, label NPmodes,
 
     for (label i = 0; i < Csize; i++)
     {
+        Info << "Filling layer number " << name(i + 1) << " in the convective tensor" <<
+             endl;
+
         for (label j = 0; j < Csize; j++)
         {
             for (label k = 0; k < Csize; k++)

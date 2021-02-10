@@ -599,9 +599,19 @@ void ReducedUnsteadyNSTurb::solveOnlineSUP(Eigen::MatrixXd vel)
                 break;
         }
 
-        for (int i = 0; i < nphiNut; i++)
+        if (readViscCoeff == false)
         {
-            newtonObjectSUP.gNut(i) = problem->rbfSplines[i]->eval(tv);
+            for (int i = 0; i < nphiNut; i++)
+            {
+                newtonObjectSUP.gNut(i) = problem->rbfSplines[i]->eval(tv);
+            }
+        }
+        else
+        {
+            for (label i = 0; i < nphiNut; i++)
+            {
+                newtonObjectSUP.gNut(i) = nutCoeffsL2(i, counter);
+            }
         }
 
         // Change initial condition for the lifting function
